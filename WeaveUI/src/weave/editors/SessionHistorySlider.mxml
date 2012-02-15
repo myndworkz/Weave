@@ -28,10 +28,11 @@
 		 xmlns="weave.editors.*"
 		 width="100%" horizontalGap="{padding}" paddingLeft="{padding}" paddingRight="{padding}" paddingTop="{padding}" paddingBottom="{padding}"
 		 implements="weave.api.ui.ILinkableObjectEditor">
-	<mx:Button visible="{SessionStateLog.devMode}" includeInLayout="{SessionStateLog.devMode}" width="24" toolTip="Load session history from a file" icon="@Embed(source='/weave/resources/images/folder.png')" click="load()"/> 
-	<mx:Button visible="{SessionStateLog.devMode}" includeInLayout="{SessionStateLog.devMode}" width="24" toolTip="Save session history to a file" icon="@Embed(source='/weave/resources/images/floppy.png')" click="save()"/>
+	<mx:Button visible="{devMode}" includeInLayout="{devMode}" width="24" toolTip="Load session history from a file" icon="@Embed(source='/weave/resources/images/folder.png')" click="load()"/> 
+	<mx:Button visible="{devMode}" includeInLayout="{devMode}" width="24" toolTip="Save session history to a file" icon="@Embed(source='/weave/resources/images/floppy.png')" click="save()"/>
 	<mx:Button width="44" id="recordButton" toggle="true" icon="{recordButton.selected ? icon_historyRecordOn : icon_historyRecordOff}"
-			   click="_stateLog.enableLogging = recordButton.selected;"
+			   visible="false" includeInLayout="false"
+			   click="_stateLog.enableLogging.value = recordButton.selected;"
 			   toolTip="Session history recording is {recordButton.selected ? 'enabled' : 'disabled'}."/>
 	<mx:Button width="24" id="undoButton" click="_stateLog.undo();" toolTip="Undo" icon="@Embed(source='/weave/resources/images/history-undo.png')"/>
 	<mx:Button width="24" id="redoButton" click="_stateLog.redo();" toolTip="Redo" icon="@Embed(source='/weave/resources/images/history-redo.png')"/>
@@ -54,6 +55,8 @@
 			import weave.ui.ExportSessionStatePanel;
 			
 			private const padding:Number = 4;
+			
+			public static const devMode:Boolean = false;
 			
 			private var _stateLog:SessionStateLog = null; // this is the object we are editing
 
@@ -103,7 +106,7 @@
 					callLater(handleStateLogChange);
 					return;
 				}
-				recordButton.selected = _stateLog.enableLogging;
+				recordButton.selected = _stateLog.enableLogging.value;
 				slider.maximum = _stateLog.undoHistory.length + _stateLog.redoHistory.length;
 				slider.value = _stateLog.undoHistory.length;
 				slider.enabled = slider.maximum > slider.minimum;
@@ -120,7 +123,7 @@
 					_weaveFileRef.addEventListener(Event.SELECT,   function (e:Event):void { _weaveFileRef.load(); } );
 					_weaveFileRef.addEventListener(Event.COMPLETE, function (e:Event):void {
 						// TEMPORARY SOLUTION
-						Application.application.loadSessionState(e.target.data, _weaveFileRef.name);
+						Application.application.visApp.loadSessionState(e.target.data, _weaveFileRef.name);
 					} );
 				}
 				_weaveFileRef.browse([new FileFilter("Weave file", "*.weave"), new FileFilter("Weave XML session state", "*.xml")]);
