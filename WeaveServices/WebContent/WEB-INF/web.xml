@@ -30,7 +30,7 @@
 		docroot folder is like "C:\Sun\SDK\domains\domain1\docroot".
 	-->
     <param-name>docrootPath</param-name>
-    <param-value>../ROOT|../../docroot|../../../docroot</param-value>
+    <param-value>../ROOT/cri-weave/config|../../docroot|../../../docroot</param-value>
   </context-param>
 
   <servlet>
