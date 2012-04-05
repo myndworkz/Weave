@@ -89,6 +89,9 @@ package weave.services.wms
 				case WMSProviders.OPEN_STREET_MAP:
 					_mapProvider = new OpenStreetMapProvider();
 					break;
+				case WMSProviders.CRI_MM:
+					_mapProvider = new MichiganStreetsProvider();
+					break;
 				case WMSProviders.MAPQUEST:
 					_mapProvider = new OpenMapQuestProvider();
 					break;
@@ -222,7 +225,8 @@ package weave.services.wms
 				}
 			}
 
-			lowerQualTiles = lowerQualTiles.concat(completedTiles);
+			//lowerQualTiles = lowerQualTiles.concat(completedTiles);
+			lowerQualTiles = completedTiles;
 			lowerQualTiles = lowerQualTiles.sort(tileSortingComparison);
 			return lowerQualTiles;
 		}
@@ -295,6 +299,8 @@ package weave.services.wms
 			else if (_mapProvider is YahooOverlayMapProvider)
 				maxZoom = 20;
 			else if (_mapProvider is OpenMapQuestProvider)
+				maxZoom = 15;
+			else if (_mapProvider is MichiganStreetsProvider)
 				maxZoom = 15;
 			else if (_mapProvider is OpenMapQuestAerialProvider)
 				maxZoom = 7;
@@ -462,6 +468,8 @@ package weave.services.wms
 				return 'Tiles Courtesy of MapQuest and (c) OpenStreetMap contributors, CC-BY-SA';
 			else if (_mapProvider is OpenMapQuestAerialProvider)
 				return 'Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency';
+			else if (_mapProvider is MichiganStreetsProvider)
+				return 'Michigan Highways';
 			
 			return '';
 		}
