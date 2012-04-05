@@ -498,14 +498,14 @@
 			[Deprecated(replacement="visualization.zoomToSelection")] public function get zoomToSelection():Function { return visualization.zoomToSelection; }
 		]]>
 	</mx:Script>
-
-	<mx:VBox id="mapControls"
+	<mx:VBox id="mapControls" x="0" y="0" width="80" height="300" horizontalAlign="center">
+	<!-- <mx:VBox id="mapControls"
 				horizontalAlign="center"
 				verticalGap="{zoomControlsToggle.selected ? 2 : 0}"
 				horizontalScrollPolicy="off" verticalScrollPolicy="off"
 				paddingLeft="2" paddingRight="2" paddingBottom="2" paddingTop="2"
 				right="0" bottom="0"
-				backgroundColor="white" backgroundAlpha="0.01">
+				backgroundColor="white" backgroundAlpha="0.01"> -->
 		<mx:VBox paddingLeft="2" paddingRight="2" paddingBottom="2" paddingTop="2"
 				includeInLayout="{zoomControlsToggle.selected}"
 				visible="{zoomControlsToggle.selected}"
