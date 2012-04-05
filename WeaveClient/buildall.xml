@@ -1,42 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<!-- This is the build script to build all the projects and their dependencies. To use these scripts, you must
-	first do the following
-	1) Setup FLEX_HOME as an operating system environment variable pointing to where you installed your Flex 3.6A SDK.
-		This Flex 3.6A SDK must be downloaded directly from Adobe-do not attempt to merge the SDK provided in FlashBuilder.
-		e.g.) C:\Flex 3.6A SDK
-	2) Add the Flex 3.6A SDK's bin folder to your operating system's PATH variable.
-	3) Add ANT's bin folder to your operating system's PATH variable.
-		e.g.) C:\ant\bin
-     Change FRAMEWORK_SWF property below to be the filename of the framework_*.swf file.
-		For example, if yours is
-		${FLEX_HOME}/frameworks/rsls/framework_3.6.0.21751.swf
-		then the FRAMEWORK_SWF would be framework_3.6.0.21751.swf
-	5) Restart Eclipse to let it register the updated PATH.
-	6) Change WEAVE_DOCROOT property located in this file. It should be the same as the WEAVE_DOCROOT
-		defined in your linked resources variable if you are using Eclipse.
-	7) From command prompt, change into the WeaveClient directory and perform this command
-		ant -f buildall.xml install
-		This will build all the files in order and push the necessary ones to WEAVE_DOCROOT.
-		-->
+<!-- save point -->
 <project name="Weave" basedir="./../" default="build">
 
 	<property environment="env"/>
 
-	<!-- This property must be defined here. Note the use of forward slashes '/' and
-		the slash required at the end -->
-	<property name="WEAVE_DOCROOT" value="/home/pkovac/pub/weave"/>
-	<property name="WEAVE_DESTROOT" value="${basedir}/ROOT"/>
-	<!-- This property's value is defined as an environment variable -->
-	<property name="FLEX_HOME" value="${env.FLEX_HOME}"/>
-	<property name="FLEX_LIBS" value="${FLEX_HOME}/frameworks/libs"/>
-	<property name="FRAMEWORK_SWF" value="framework_3.6.0.21751.swf"/>
-	<property name="RPC_SWF" value="rpc_3.6.0.16995.swf"/>
+	<property file="${basedir}\build.properties"/>
 
-    <taskdef resource="flexTasks.tasks" classpath="${FLEX_HOME}/ant/lib/flexTasks.jar"/>
+	<!-- the following are used to connect to the server -->
+	<property file="${basedir}\tomcat.properties" />
+	<!-- The following is needed to make <deploy> declaration work! -->
+	<property file="${basedir}\tomcattasks.properties" />
+
+	<taskdef file="${basedir}\tomcattasks.properties">
+		<classpath>
+			<pathelement path="${ext.lib}/catalina-ant.jar" />
+		</classpath>
+	</taskdef>
+
 	<taskdef name="html-wrapper" classname="flex.ant.HtmlWrapperTask" classpath="${FLEX_HOME}/ant/lib/flexTasks.jar" />
 
 	<!-- These are the projects -->
+	<!-- <property name="DEBUG" value="true"/> -->
 	<property name="API" value="WeaveAPI"/>
 	<property name="CORE" value="WeaveCore"/>
 	<property name="DATA" value="WeaveData"/>
@@ -47,33 +31,135 @@
 
 	<target name="dist" depends="build">
 		<zip destfile="weave.zip">
-		    <zipfileset dir="${WEAVE_DESTROOT}" prefix="ROOT"/>
-		    <zipfileset file="${basedir}/WeaveServices.war"/>
+			<zipfileset dir="${WEAVE_DESTROOT}" prefix="ROOT"/>
+			<zipfileset file="${basedir}/WeaveServices.war"/>
 		</zip>
 	</target>
-	
+
 	<target name="deploy_war">
 		<zip destfile="weave.zip">
-		    <zipfileset dir="${WEAVE_DESTROOT}" prefix="ROOT"/>
-		    <zipfileset file="${basedir}/WeaveServices.war"/>
-	    </zip>
+			<zipfileset dir="${WEAVE_DESTROOT}" prefix="ROOT"/>
+			<zipfileset file="${basedir}/WeaveServices.war"/>
+		</zip>
 	</target>
-	
+
 	<target name="install" depends="build">
 		<!-- This target will install the files to WEAVE_DOCROOT. -->
 		<copy todir="${WEAVE_DOCROOT}">
-		    <fileset dir="${WEAVE_DESTROOT}">
-			<include name="*.swf"/>
-			<include name="*.html"/>
-			<include name="*.js"/>
-			<include name="*.css"/>
-		    </fileset>
+			<fileset dir="${WEAVE_DESTROOT}">
+				<include name="*.swf"/>
+				<include name="*.html"/>
+				<include name="*.js"/>
+				<include name="*.css"/>
+			</fileset>
 		</copy>
 	</target>
+
+	<target name="copy_local" depends="build">
+		<!-- This target recreates the tomcat directory 
+						 and replaces the WeaveServices war file -->
+		<!-- Delete the old files on the dev server -->
+		<echo message="Cleaning local server of old files..."/>
+		<delete dir="${local_web}" />
+		<mkdir dir="${local_web}" />
+		<delete file="${local_war}/WeaveServices.war"/>
+
+		<!-- Deploy from the project to the dev server (localhost) -->
+		<echo message="Deploying new build to local server..."/>
+		<copy todir="${local_web}">
+			<fileset dir="${WEAVE_DESTROOT}">
+				<include name="*.swf"/>
+				<include name="*.html"/>
+				<include name="*.js"/>
+				<include name="*.css"/>
+			</fileset>
+		</copy>
+		<echo message="Deploying WAR file to local server"/>
+		<copy todir="${local_war}">
+			<fileset file="${basedir}/WeaveServices.war"/>
+		</copy>
+	</target>
+	
+	<target name="copy_local_nobuild">
+			<!-- This target recreates the tomcat directory 
+							 and replaces the WeaveServices war file -->
+			<!-- Delete the old files on the dev server -->
+			<echo message="Cleaning local server of old files..."/>
+	
+			<!-- Deploy from the project to the dev server (localhost) -->
+			<echo message="Deploying new build to local server..."/>
+			<copy todir="${local_web}">
+				<fileset dir="${WEAVE_DESTROOT}">
+					<include name="*.html"/>
+					<include name="*.js"/>
+					<include name="*.css"/>
+					<include name="*.jsp"/>
+				</fileset>
+			</copy>
+		</target>
+
+	<target name="deploy-app" depends="build">
+		<echo message="Deploying ${ant.project.name} to ${target.server}" />
+		<echo message="Manager: ${target.manager.url}" />
+		<echo message="Username: ${target.username}" />
+		<echo message="password: ${target.password}" />
+		<echo message="path: /${test_path}" />
+		<echo message="war file:${basedir}\WeaveServices.war" />
+
+		<deploy url="${target.manager.url}" username="${target.username}"
+		            password="${target.password}" path="/${test_path}"
+		            war="file:${basedir}/WeaveServices.war" />
+
+		<echo message="${target.username}:${target.password}@${target.server}:/opt/tomcat7/webapps/ROOT/cri-weave"/>
+		<scp todir="${target.username}:${target.password}@${target.server}:/opt/tomcat7/webapps/ROOT/cri-weave" sftp="true" trust="true" >
+			<fileset dir="${WEAVE_DESTROOT}">
+				<include name="*.*"/>
+			</fileset>
+		</scp>
+	</target>
+
+	<target name="undeploy-app">
+		<echo message="Removing ${ant.project.name} from ${target.server}" />
+		<echo message="Manager: ${target.manager.url}" />
+		<echo message="Username: ${target.username}" />
+		<echo message="password: ${target.password}" />
+		<echo message="path: /${test_path}" />
+		<echo message="war file:${basedir}\WeaveServices.war" />
+
+		<undeploy url="${target.manager.url}" username="${target.username}"
+		            password="${target.password}" path="/${test_path}" />
+	</target>
+
+	<target name="deploy_test" depends="build">
+		<property name="target.server" value="${test.server}"/>
+		<property name="target.manager.url" value="${test.manager.url}"/>
+		<property name="target.username" value="${test.username}"/>
+		<property name="target.password" value="${test.password}"/>
+		<antcall target="deploy-app"/>
+	</target>
+
+	<target name="undeploy_test" depends="build">
+		<property name="target.server" value="${test.server}"/>
+		<property name="target.manager.url" value="${test.manager.url}"/>
+		<property name="target.username" value="${test.username}"/>
+		<property name="target.password" value="${test.password}"/>
+		<antcall target="undeploy-app"/>
+	</target>
+
+	<target name="redeploy_test" depends="build">
+		<property name="target.server" value="${test.server}"/>
+		<property name="target.manager.url" value="${test.manager.url}"/>
+		<property name="target.username" value="${test.username}"/>
+		<property name="target.password" value="${test.password}"/>
+		<antcall target="undeploy-app"/>
+		<antcall target="deploy-app"/>
+	</target>
+
 	<!-- This target will extract the swf files from the swc archives
 		and extract them to the WEAVE_DESTROOT -->
 	<target name="build" depends="client, admin, ui, data, core, api, services">
 		<mkdir dir="${WEAVE_DESTROOT}"/>
+		<ant dir="${basedir}/${CLIENT}" target="build"/>
 		<extract_swc swc="${basedir}/${API}/bin/${API}.swc" rsl="${API}.swf"/>
 		<extract_swc swc="${basedir}/${CORE}/bin/${CORE}.swc" rsl="${CORE}.swf"/>
 		<extract_swc swc="${basedir}/${DATA}/bin/${DATA}.swc" rsl="${DATA}.swf"/>
@@ -82,42 +168,44 @@
 		<copy file="${basedir}/${CLIENT}/bin/${CLIENT}.swf" tofile="${WEAVE_DESTROOT}/weave.swf"/>
 		<copy file="${basedir}/${ADMIN}/bin/${ADMIN}.swf" tofile="${WEAVE_DESTROOT}/AdminConsole.swf"/>
 		<copy file="${basedir}/${SERVICES}/build/jar/${SERVICES}.war" tofile="${basedir}/${SERVICES}.war"/>
-		<copy file="${FLEX_HOME}/frameworks/rsls/${FRAMEWORK_SWF}" tofile="${WEAVE_DESTROOT}/framework.swf"/>
-		<copy file="${FLEX_HOME}/frameworks/rsls/${RPC_SWF}" tofile="${WEAVE_DESTROOT}/rpc.swf"/>
+		<!-- CSTEF - 01-06-12 - Had to hard code these values, they are different from the previous. -->
+		<copy file="${FLEX_HOME}/frameworks/rsls/framework_3.6.0.21751.swf" tofile="${WEAVE_DESTROOT}/framework.swf"/>
+		<copy file="${FLEX_HOME}/frameworks/rsls/rpc_3.6.0.16995.swf" tofile="${WEAVE_DESTROOT}/rpc.swf"/>
 		<antcall target="admin_wrapper"/>
 		<antcall target="client_wrapper"/>
 	</target>
 
 	<!-- These targets will build each project -->
-	<target name="api">
-		<buildproject targetproject="${API}" targetfileext="swc"/>
+	<target name="client" depends="ui, data, core, api, check_client" unless="client_no_changes">
+		<ant dir="${basedir}/${CLIENT}" target="build"/>
 	</target>
-	<target name="core" depends="api">
-		<buildproject targetproject="${CORE}" targetfileext="swc"/>
+	<target name="admin" depends="ui, data, core, api, check_admin" unless="admin_no_changes">
+		<ant dir="${basedir}/${ADMIN}" target="build"/>
 	</target>
-	<target name="data" depends="core">
-		<buildproject targetproject="${DATA}" targetfileext="swc"/>
+	<target name="api" depends="check_api" unless="api_no_changes">
+		<ant dir="${basedir}/${API}" target="build"/>
 	</target>
-	<target name="ui" depends="data">
-		<buildproject targetproject="${UI}" targetfileext="swc"/>
+	<target name="core" depends="api, check_core" unless="core_no_changes">
+		<ant dir="${basedir}/${CORE}" target="build"/>
 	</target>
-	<target name="client" depends="ui">
-		<buildproject targetproject="${CLIENT}" targetfileext="swf"/>
+	<target name="data" depends="core, api, check_data" unless="data_no_changes">
+		<ant dir="${basedir}/${DATA}" target="build"/>
 	</target>
-	<target name="admin" depends="ui">
-		<buildproject targetproject="${ADMIN}" targetfileext="swf"/>
+	<target name="ui" depends="data, core, api, check_ui" unless="ui_no_changes">
+		<ant dir="${basedir}/${UI}" target="build"/>
 	</target>
 	<target name="services">
-	    <ant dir="${basedir}/WeaveServices" target="dist"/>
+		<ant dir="${basedir}/WeaveServices" target="dist"/>
 	</target>
 
 	<!-- This target calls the clean targets of each project's build file -->
 	<target name="clean">
 		<echo message="Cleaning all projects..."/>
 		<delete quiet="false" includeemptydirs="true" dir="${WEAVE_DESTROOT}">
-		    <fileset file="${basedir}/WeaveServices.war"/>
-		    <fileset file="${basedir}/weave.zip"/>
+			<fileset file="${basedir}/WeaveServices.war"/>
+			<fileset file="${basedir}/weave.zip"/>
 		</delete>
+		<delete file="${basedir}/WeaveServices.war"/>
 		<ant dir="${basedir}/${CLIENT}" target="clean" />
 		<ant dir="${basedir}/${ADMIN}" target="clean" />
 		<ant dir="${basedir}/${API}" target="clean" />
@@ -126,6 +214,67 @@
 		<ant dir="${basedir}/${UI}" target="clean" />
 		<ant dir="${basedir}/${SERVICES}" target="clean" />
 	</target>
+
+
+	<!-- These targets set the properties ${project name}_no_changes if the target for each
+		project is more up-to-date than its source files or dependencies -->
+	<target name="check_api">
+		<echo message="Checking status of ${API}..."/>
+		<uptodate property="api_no_changes" targetfile="${basedir}/${API}/bin/${API}.swc">
+			<srcfiles dir="${basedir}/${API}" includes="**/*.as"/>
+			<srcfiles dir="${basedir}/${API}" includes="**/*.mxml"/>
+		</uptodate>
+	</target>
+	<target name="check_core">
+		<echo message="Checking status of ${CORE}..."/>
+		<uptodate property="core_no_changes" targetfile="${basedir}/${CORE}/bin/${CORE}.swc">
+			<srcfiles dir="${basedir}/${CORE}" includes="**/*.as"/>
+			<srcfiles dir="${basedir}/${CORE}" includes="**/*.mxml"/>
+			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
+		</uptodate>
+	</target>
+	<target name="check_data">
+		<echo message="Checking status of ${DATA}..."/>
+		<uptodate property="data_no_changes" targetfile="${basedir}/${DATA}/bin/${DATA}.swc">
+			<srcfiles dir="${basedir}/${DATA}" includes="**/*.as"/>
+			<srcfiles dir="${basedir}/${DATA}" includes="**/*.mxml"/>
+			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
+			<srcfiles dir="${basedir}/${CORE}/bin" includes="${CORE}.swc"/>
+		</uptodate>
+	</target>
+	<target name="check_ui">
+		<echo message="Checking status of ${UI}..."/>
+		<uptodate property="ui_no_changes" targetfile="${basedir}/${UI}/bin/${UI}.swc">
+			<srcfiles dir="${basedir}/${UI}" includes="**/*.as"/>
+			<srcfiles dir="${basedir}/${UI}" includes="**/*.mxml"/>
+			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
+			<srcfiles dir="${basedir}/${CORE}/bin" includes="${CORE}.swc"/>
+			<srcfiles dir="${basedir}/${DATA}/bin" includes="${DATA}.swc"/>
+		</uptodate>
+	</target>
+	<target name="check_client">
+		<echo message="Checking status of ${CLIENT}..."/>
+		<uptodate property="client_no_changes" targetfile="${basedir}/${CLIENT}/bin/${CLIENT}.swf">
+			<srcfiles dir="${basedir}/${CLIENT}" includes="**/*.as"/>
+			<srcfiles dir="${basedir}/${CLIENT}" includes="**/*.mxml"/>
+			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
+			<srcfiles dir="${basedir}/${CORE}/bin" includes="${CORE}.swc"/>
+			<srcfiles dir="${basedir}/${DATA}/bin" includes="${DATA}.swc"/>
+			<srcfiles dir="${basedir}/${UI}/bin" includes="${UI}.swc"/>
+		</uptodate>
+	</target>
+	<target name="check_admin">
+		<echo message="Checking status of ${ADMIN}..."/>
+		<uptodate property="admin_no_changes" targetfile="${basedir}/${ADMIN}/bin/${ADMIN}.swf">
+			<srcfiles dir="${basedir}/${ADMIN}" includes="**/*.as"/>
+			<srcfiles dir="${basedir}/${ADMIN}" includes="**/*.mxml"/>
+			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
+			<srcfiles dir="${basedir}/${CORE}/bin" includes="${CORE}.swc"/>
+			<srcfiles dir="${basedir}/${DATA}/bin" includes="${DATA}.swc"/>
+			<srcfiles dir="${basedir}/${UI}/bin" includes="${UI}.swc"/>
+		</uptodate>
+	</target>
+
 
 	<target name="admin_wrapper">
 		<html-wrapper 
@@ -160,7 +309,6 @@
 			bgcolor="#7B96B6"
 		/>
 	</target>
-
 	<macrodef name="extract_swc">
 		<attribute name="swc"/>
 		<attribute name="rsl"/>
@@ -174,24 +322,4 @@
 			<delete dir="${WEAVE_DESTROOT}/temp"/>
 		</sequential>
 	</macrodef>
-	
-	<macrodef name="buildproject">
-		<attribute name="targetproject"/>
-		<attribute name="targetfileext"/>
-		<sequential>
-			<echo message="Checking @{targetproject}..."/>
-			<uptodate targetfile="${basedir}/@{targetproject}/bin/@{targetproject}.@{targetfileext}" property="@{targetproject}.uptodate">
-				<srcfiles dir="${basedir}/@{targetproject}" includes="**/*"/>
-			</uptodate>
-			<antcall target="conditional_build">
-				<param name="targetproject" value="@{targetproject}"/>
-			</antcall>
-		</sequential>
-	</macrodef>
-	<target name="conditional_build" unless="${targetproject}.uptodate">
-		<sequential>
-			<echo message="Building ${targetproject}..."/>
-			<ant dir="${basedir}/${targetproject}" target="build"/>
-		</sequential>
-	</target>
 </project>
