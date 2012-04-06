@@ -55,13 +55,13 @@
 		</copy>
 	</target>
 
-	<target name="copy_local" depends="build">
+	<target name="deploy_local" depends="build">
 		<!-- This target recreates the tomcat directory 
 						 and replaces the WeaveServices war file -->
 		<!-- Delete the old files on the dev server -->
 		<echo message="Cleaning local server of old files..."/>
-		<delete dir="${local_web}" />
-		<mkdir dir="${local_web}" />
+		<!--<delete dir="${local_web}" />
+		<mkdir dir="${local_web}" /> -->
 		<delete file="${local_war}/WeaveServices.war"/>
 
 		<!-- Deploy from the project to the dev server (localhost) -->
@@ -79,24 +79,6 @@
 			<fileset file="${basedir}/WeaveServices.war"/>
 		</copy>
 	</target>
-	
-	<target name="copy_local_nobuild">
-			<!-- This target recreates the tomcat directory 
-							 and replaces the WeaveServices war file -->
-			<!-- Delete the old files on the dev server -->
-			<echo message="Cleaning local server of old files..."/>
-	
-			<!-- Deploy from the project to the dev server (localhost) -->
-			<echo message="Deploying new build to local server..."/>
-			<copy todir="${local_web}">
-				<fileset dir="${WEAVE_DESTROOT}">
-					<include name="*.html"/>
-					<include name="*.js"/>
-					<include name="*.css"/>
-					<include name="*.jsp"/>
-				</fileset>
-			</copy>
-		</target>
 
 	<target name="deploy-app" depends="build">
 		<echo message="Deploying ${ant.project.name} to ${target.server}" />

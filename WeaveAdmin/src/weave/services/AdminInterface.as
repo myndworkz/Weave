@@ -654,7 +654,7 @@ package weave.services
 		{
 			var url:String = 'weave.html?';
 			if (fileName)
-				url += 'file=' + fileName + '&'
+				url += 'file=config/' + fileName + '&'
 			url += 'adminSession=' + createWeaveService();
 			var target:String = '_blank';
 			var params:String = 'width=1000,height=740,location=0,toolbar=0,menubar=0,resizable=1';
