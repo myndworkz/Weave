@@ -190,7 +190,7 @@ package weave.api
 			catch (e:Error)
 			{
 				if (e.errorID == 2060)
-					ErrorManager.reportError(e, "In the HTML, make sure that the parameter 'allowscriptaccess' is set to 'always'.");
+					ErrorManager.reportError(e, "In the HTML embedded object tag, make sure that the parameter 'allowScriptAccess' is set to 'always'. " + e.message);
 				else
 					ErrorManager.reportError(e);
 			}
