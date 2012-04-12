@@ -25,6 +25,7 @@ package weave.api
 	
 	import weave.api.core.IErrorManager;
 	import weave.api.core.IExternalSessionStateInterface;
+	import weave.api.core.ILinkableHashMap;
 	import weave.api.core.IProgressIndicator;
 	import weave.api.core.ISessionManager;
 	import weave.api.core.IStageUtils;
@@ -133,6 +134,13 @@ package weave.api
 		public static function get URLRequestUtils():IURLRequestUtils
 		{
 			return getSingletonInstance(IURLRequestUtils);
+		}
+		/**
+		 * This is the top-level object in Weave.
+		 */		
+		public static function get globalHashMap():ILinkableHashMap
+		{
+			return getSingletonInstance(ILinkableHashMap);
 		}
 		/**************************************/
 
@@ -307,6 +315,15 @@ package weave.api
 		 */		
 		public static function getSingletonInstance(singletonInterface:Class):*
 		{
+			if (!_initialized)
+			{
+				_initialized = true;
+				// run static initialization code to register weave implementations
+				try {
+					getDefinitionByName("_InitializeWeave"); // run static initialization code 
+				} catch (e:Error) { }
+			}
+			
 			var result:* = _singletonDictionary[singletonInterface];
 			// If no instance has been created yet, create one now.
 			if (!result)
@@ -337,6 +354,11 @@ package weave.api
 			// Return saved instance.
 			return result;
 		}
+		
+		/**
+		 * Used by getSingletonInstance.
+		 */		
+		private static var _initialized:Boolean = false;
 		
 		/**
 		 * This is used to save a mapping from an interface to its singleton implementation instance.

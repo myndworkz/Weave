@@ -35,47 +35,26 @@ package weave
 	
 	import weave.api.WeaveAPI;
 	import weave.api.WeaveArchive;
-	import weave.api.core.IErrorManager;
-	import weave.api.core.IExternalSessionStateInterface;
 	import weave.api.core.ILinkableHashMap;
 	import weave.api.core.ILinkableObject;
-	import weave.api.core.IProgressIndicator;
-	import weave.api.core.ISessionManager;
-	import weave.api.core.IStageUtils;
-	import weave.api.data.IAttributeColumnCache;
-	import weave.api.data.ICSVParser;
-	import weave.api.data.IProjectionManager;
-	import weave.api.data.IQualifiedKeyManager;
-	import weave.api.data.IStatisticsCache;
 	import weave.api.getCallbackCollection;
 	import weave.api.reportError;
-	import weave.api.services.IURLRequestUtils;
 	import weave.compiler.StandardLib;
 	import weave.core.ClassUtils;
-	import weave.core.ErrorManager;
 	import weave.core.ExternalSessionStateInterface;
 	import weave.core.LibraryUtils;
 	import weave.core.LinkableDynamicObject;
 	import weave.core.LinkableHashMap;
-	import weave.core.ProgressIndicator;
-	import weave.core.SessionManager;
 	import weave.core.SessionStateLog;
-	import weave.core.StageUtils;
 	import weave.core.WeaveXMLDecoder;
 	import weave.core.WeaveXMLEncoder;
-	import weave.data.AttributeColumnCache;
 	import weave.data.AttributeColumns.BinnedColumn;
 	import weave.data.AttributeColumns.ColorColumn;
 	import weave.data.AttributeColumns.FilteredColumn;
-	import weave.data.CSVParser;
 	import weave.data.KeySets.KeyFilter;
 	import weave.data.KeySets.KeySet;
-	import weave.data.ProjectionManager;
-	import weave.data.QKeyManager;
-	import weave.data.StatisticsCache;
-	import weave.editors._registerAllLinkableObjectEditors;
-	import weave.services.URLRequestUtils;
 	import weave.utils.BitmapUtils;
+	import weave.utils.DebugUtils;
 	import weave.utils.VectorUtils;
 	
 	/**
@@ -86,70 +65,6 @@ package weave
 		public static var ALLOW_PLUGINS:Boolean = false; // TEMPORARY
 		public static var debug:Boolean = false;
 		
-		{ /** begin static code block **/
-			initialize();
-		} /** end static code block **/
-		
-		private static var _initialized:Boolean = false; // used by initialize()
-		
-		/**
-		 * This function gets called automatically and will register implementations of core API classes.
-		 * This function can be called explicitly to immediately register the classes.
-		 */
-		public static function initialize():void
-		{
-			if (_initialized)
-				return;
-			_initialized = true;
-			
-			// register singleton implementations for framework classes
-			WeaveAPI.registerSingleton(ISessionManager, SessionManager);
-			WeaveAPI.registerSingleton(IStageUtils, StageUtils);
-			WeaveAPI.registerSingleton(IErrorManager, ErrorManager);
-			WeaveAPI.registerSingleton(IExternalSessionStateInterface, ExternalSessionStateInterface);
-			WeaveAPI.registerSingleton(IProgressIndicator, ProgressIndicator);
-			WeaveAPI.registerSingleton(IAttributeColumnCache, AttributeColumnCache);
-			WeaveAPI.registerSingleton(IStatisticsCache, StatisticsCache);
-			WeaveAPI.registerSingleton(IQualifiedKeyManager, QKeyManager);
-			WeaveAPI.registerSingleton(IProjectionManager, ProjectionManager);
-			WeaveAPI.registerSingleton(IURLRequestUtils, URLRequestUtils);
-			WeaveAPI.registerSingleton(ICSVParser, CSVParser);
-			
-			_registerAllLinkableObjectEditors();
-			
-			// initialize the session state interface to point to Weave.root
-			(WeaveAPI.ExternalSessionStateInterface as ExternalSessionStateInterface).setLinkableObjectRoot(root);
-
-			// FOR BACKWARDS COMPATIBILITY
-			ExternalSessionStateInterface.tryAddCallback("createObject", function(...args):* {
-				reportError("The Weave JavaScript API function createObject is deprecated.  Please use requestObject instead.");
-				WeaveAPI.ExternalSessionStateInterface.requestObject.apply(null, args);
-			});
-			
-			// include these packages in WeaveXMLDecoder so they will not need to be specified in the XML session state.
-			WeaveXMLDecoder.includePackages(
-				"weave",
-				"weave.core",
-				"weave.data",
-				"weave.data.AttributeColumns",
-				"weave.data.BinClassifiers",
-				"weave.data.BinningDefinitions",
-				"weave.data.ColumnReferences",
-				"weave.data.DataSources",
-				"weave.data.KeySets",
-				"weave.editors",
-				"weave.primitives",
-				"weave.Reports",
-				"weave.test",
-				"weave.ui",
-				"weave.utils",
-				"weave.visualization",
-				"weave.visualization.tools",
-				"weave.visualization.layers",
-				"weave.visualization.plotters",
-			    "weave.visualization.plotters.styles"
-			);
-		}
 		
 		private static var _root:ILinkableHashMap = null; // root object of Weave
 		private static var _history:SessionStateLog = null; // root session history
@@ -161,9 +76,9 @@ package weave
 		{
 			if (_root == null)
 			{
-				_root = LinkableDynamicObject.globalHashMap;
+				_root = WeaveAPI.globalHashMap;
 				createDefaultObjects(_root);
-				_history = new SessionStateLog(root, 100);
+				_history = new SessionStateLog(_root, 100);
 			}
 			return _root;
 		}
@@ -199,9 +114,9 @@ package weave
 		
 		public static const DEFAULT_WEAVE_PROPERTIES:String = "WeaveProperties";
 		
+		public static const DEFAULT_COLOR_COLUMN:String = "defaultColorColumn";
 		public static const DEFAULT_COLOR_BIN_COLUMN:String = "defaultColorBinColumn";
 		public static const DEFAULT_COLOR_DATA_COLUMN:String = "defaultColorDataColumn";
-		public static const DEFAULT_COLOR_COLUMN:String = "defaultColorColumn";
 
 		public static const DEFAULT_SUBSET_KEYFILTER:String = "defaultSubsetKeyFilter";
 		public static const DEFAULT_SELECTION_KEYSET:String = "defaultSelectionKeySet";
@@ -209,6 +124,17 @@ package weave
 		public static const ALWAYS_HIGHLIGHT_KEYSET:String = "alwaysHighlightKeySet";
 		public static const SAVED_SELECTION_KEYSETS:String = "savedSelections";
 		public static const SAVED_SUBSETS_KEYFILTERS:String = "savedSubsets";
+
+		public static function get defaultColorColumn():ColorColumn { return root.getObject(DEFAULT_COLOR_COLUMN) as ColorColumn; }
+		public static function get defaultColorBinColumn():BinnedColumn { return root.getObject(DEFAULT_COLOR_BIN_COLUMN) as BinnedColumn; }
+		public static function get defaultColorDataColumn():FilteredColumn { return root.getObject(DEFAULT_COLOR_DATA_COLUMN) as FilteredColumn; }
+		
+		public static function get defaultSubsetKeyFilter():KeyFilter { return root.getObject(DEFAULT_SUBSET_KEYFILTER) as KeyFilter; }
+		public static function get defaultSelectionKeySet():KeySet { return root.getObject(DEFAULT_SELECTION_KEYSET) as KeySet; }
+		public static function get defaultProbeKeySet():KeySet { return root.getObject(DEFAULT_PROBE_KEYSET) as KeySet; }
+		public static function get alwaysHighlightKeySet():KeySet { return root.getObject(ALWAYS_HIGHLIGHT_KEYSET) as KeySet; }
+		public static function get savedSelectionKeySets():LinkableHashMap { return root.getObject(SAVED_SELECTION_KEYSETS) as LinkableHashMap; }
+		public static function get savedSubsetsKeyFilters():LinkableHashMap { return root.getObject(SAVED_SUBSETS_KEYFILTERS) as LinkableHashMap; }
 		
 		/**
 		 * This initializes a default set of objects in an ILinkableHashMap.

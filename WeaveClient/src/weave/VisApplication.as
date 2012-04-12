@@ -112,27 +112,6 @@ package weave
 	{
 		MXClasses; // Referencing this allows all Flex classes to be dynamically created at runtime.
 
-		{ /** BEGIN STATIC CODE BLOCK **/ 
-			Weave.initialize(); // this registers specific WeaveAPI implementation classes.
-		} /** END STATIC CODE BLOCK **/
-		
-		/**
-		 * Optional menu bar (top of the screen) and task bar (bottom of the screen).  These would be used for an advanced analyst
-		 * view to add new tools, manage windows, do advanced tasks, etc.
-		 */
-		private var _weaveMenu:WeaveMenuBar = null;
-		
-		/**
-		 * Optional menu bar (bottom of screen) to control the collaboration service and interaction
-		 * between users.
-		 */
-		private var _collabMenu:CollaborationMenuBar = new CollaborationMenuBar();
-		
-		/**
-		 * This will be used to incorporate branding into any weave view.  Linkable to the Open Indicators Consortium website.
-		 */
-		private var _oicLogoPane:OICLogoPane = new OICLogoPane();
-
 		/**
 		 * Constructor.
 		 */
@@ -463,11 +442,6 @@ package weave
 			}
 		}
 		
-		public function getMenuItems():ArrayCollection
-		{
-			return _weaveMenu.menubar.dataProvider as ArrayCollection;
-		}
-		
 		private function updateWorkspaceSize(..._):void
 		{
 			if (!this.parent)
@@ -566,8 +540,17 @@ package weave
 			ExternalInterface.call("window.close()");
 		}
 
+		/**
+		 * Optional menu bar (bottom of screen) to control the collaboration service and interaction
+		 * between users.
+		 */
+		private var _collabMenu:CollaborationMenuBar = null;
+		
 		private function toggleCollaborationMenuBar():void
 		{
+			if (!_collabMenu)
+				_collabMenu = new CollaborationMenuBar();
+			
 			if( Weave.properties.enableCollaborationBar.value )
 			{
 				if( !_collabMenu.parent )
@@ -589,6 +572,23 @@ package weave
 				}
 			}
 		}
+
+		public function getMenuItems():ArrayCollection
+		{
+			return _weaveMenu.menubar.dataProvider as ArrayCollection;
+		}
+		
+		/**
+		 * This will be used to incorporate branding into any weave view.  Linkable to the Open Indicators Consortium website.
+		 */
+		private var _oicLogoPane:OICLogoPane = new OICLogoPane();
+		
+		/**
+		 * Optional menu bar (top of the screen) and task bar (bottom of the screen).  These would be used for an advanced analyst
+		 * view to add new tools, manage windows, do advanced tasks, etc.
+		 */
+		private var _weaveMenu:WeaveMenuBar = null;
+		
 		private function toggleMenuBar():void
 		{
 			if (!enabled)
@@ -868,6 +868,8 @@ package weave
 						tag.setLocalName("WeaveDataSource");
 					for each (tag in xml.descendants("OpenIndicatorsDataSource"))
 						tag.setLocalName("WeaveDataSource");
+					for each (tag in xml.descendants("EmptyTool"))
+						tag.setLocalName("CustomTool");
 					for each (tag in xml.descendants("WMSPlotter2"))
 						tag.setLocalName("WMSPlotter");
 					for each (tag in xml.descendants("SessionedTextArea"))
