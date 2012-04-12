@@ -23,5 +23,3 @@ The bare minimum you need to build Weave is [Flex 3.6A](http://opensource.adobe.
 To build the projects on the command line, use the **WeaveClient/buildall.xml** and **WeaveServices/build.xml** Ant scripts.
 
 See install-linux.md for detailed linux install instructions.
-
-BLAH BLAH BLAH
