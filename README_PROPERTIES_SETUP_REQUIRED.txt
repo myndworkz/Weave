@@ -32,7 +32,7 @@ devl.manager.url=http\://${devl.server}\:8080/manager/text
 devl.username=managerUserName
 devl.password=password
 
-# test server settings **old open.cridata.org VM MACHINE**
+# test server settings
 test.server=yourserver.org
 test.manager.url=http\://${test.server}/manager/text
 test.username=managerUserName
