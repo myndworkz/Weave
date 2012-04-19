@@ -39,11 +39,10 @@ package weave
 	import weave.api.core.ILinkableObject;
 	import weave.api.getCallbackCollection;
 	import weave.api.reportError;
+	import weave.api.ui.IVisTool;
 	import weave.compiler.StandardLib;
 	import weave.core.ClassUtils;
-	import weave.core.ExternalSessionStateInterface;
 	import weave.core.LibraryUtils;
-	import weave.core.LinkableDynamicObject;
 	import weave.core.LinkableHashMap;
 	import weave.core.SessionStateLog;
 	import weave.core.WeaveXMLDecoder;
@@ -54,7 +53,6 @@ package weave
 	import weave.data.KeySets.KeyFilter;
 	import weave.data.KeySets.KeySet;
 	import weave.utils.BitmapUtils;
-	import weave.utils.DebugUtils;
 	import weave.utils.VectorUtils;
 	
 	/**
@@ -62,6 +60,8 @@ package weave
 	 */
 	public class Weave
 	{
+		MXClasses; // Referencing this allows all Flex classes to be dynamically created at runtime.
+		
 		public static var ALLOW_PLUGINS:Boolean = false; // TEMPORARY
 		public static var debug:Boolean = false;
 		
@@ -236,6 +236,7 @@ package weave
 				// load missing plugins
 				var remaining:int = _pluginList.length;
 				var ILinkableObject_classQName:String = getQualifiedClassName(ILinkableObject);
+				var IVisTool_classQName:String = getQualifiedClassName(IVisTool);
 				
 				function handlePlugin(event:Event, token:Object = null):void
 				{
@@ -243,8 +244,6 @@ package weave
 					var faultEvent:FaultEvent = event as FaultEvent;
 					if (resultEvent)
 					{
-						if (debug)
-							reportError("Loaded plugin: " + token);
 						trace("Loaded plugin:", token);
 						var classQNames:Array = resultEvent.result as Array;
 						for (var i:int = 0; i < classQNames.length; i++)
@@ -253,8 +252,6 @@ package weave
 							// check if it implements ILinkableObject
 							if (ClassUtils.classImplements(classQName, ILinkableObject_classQName))
 							{
-								if (debug)
-									reportError(classQName);
 								trace(classQName);
 							}
 						}
