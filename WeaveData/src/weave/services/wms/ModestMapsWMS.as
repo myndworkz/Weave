@@ -301,7 +301,7 @@ package weave.services.wms
 			else if (_mapProvider is OpenMapQuestProvider)
 				maxZoom = 15;
 			else if (_mapProvider is MichiganStreetsProvider)
-				maxZoom = 15;
+				maxZoom = 18;
 			else if (_mapProvider is OpenMapQuestAerialProvider)
 				maxZoom = 7;
 			

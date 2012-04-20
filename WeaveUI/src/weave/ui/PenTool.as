@@ -339,6 +339,9 @@ package weave.ui
 					_drawing = true;
 
 					coords.value += '\n' + _tempPoint.x + "," + _tempPoint.y + ",";
+					
+					// CSTEF - 4-16-12 - replace \n with :
+					//coords.value += ':' + _tempPoint.x + "," + _tempPoint.y + ",";
 				
 					line = [];
 					line.push(_tempPoint.x, _tempPoint.y);
