@@ -74,7 +74,7 @@ package weave.services.wms
 			{
 				// we cannot use Microsoft services, but we can keep the code 
 				
-				/*case 'Microsoft Aerial':
+				case 'Microsoft Aerial':
 					_mapProvider = new MicrosoftAerialMapProvider();
 					break;
 				case 'Microsoft Hybrid':
@@ -82,7 +82,7 @@ package weave.services.wms
 					break;
 				case 'Microsoft RoadMap':
 					_mapProvider = new MicrosoftRoadMapProvider();
-					break;*/
+					break;
 				case WMSProviders.BLUE_MARBLE_MAP:
 					_mapProvider = new BlueMarbleMapProvider();
 					break;
@@ -289,7 +289,7 @@ package weave.services.wms
 			else if (_mapProvider is OpenStreetMapProvider)
 				maxZoom = 18;
 			else if (_mapProvider is MicrosoftProvider)
-				maxZoom = 20;
+				maxZoom = 25;
 			else if (_mapProvider is YahooAerialMapProvider)
 				maxZoom = 20;
 			else if (_mapProvider is YahooRoadMapProvider)
@@ -301,7 +301,7 @@ package weave.services.wms
 			else if (_mapProvider is OpenMapQuestProvider)
 				maxZoom = 15;
 			else if (_mapProvider is MichiganStreetsProvider)
-				maxZoom = 18;
+				maxZoom = 25;
 			else if (_mapProvider is OpenMapQuestAerialProvider)
 				maxZoom = 7;
 			

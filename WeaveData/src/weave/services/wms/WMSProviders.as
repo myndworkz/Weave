@@ -40,10 +40,10 @@ package weave.services.wms
 			
 			
 				
-			/*	_providersToSRS[CRI] = CriProvider.IMAGE_PROJECTION_SRS;
-			 * _providersToSRS[MICROSOFT1] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
+				//_providersToSRS[CRI] = CriProvider.IMAGE_PROJECTION_SRS;
+			_providersToSRS[MICROSOFT1] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
 			_providersToSRS[MICROSOFT2] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
-			_providersToSRS[MICROSOFT3] = ModestMapsWMS.IMAGE_PROJECTION_SRS;*/
+			_providersToSRS[MICROSOFT3] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
 		} /** END STATIC CODE BLOCK **/
 		
 		/**
@@ -82,10 +82,10 @@ package weave.services.wms
 		public static const CRI_MM:String = 'CRI Modest Maps version';
 		
 		/*
-		 * public static const CRI:String = 'CRI';
-		 * public static const MICROSOFT1:String = 'Microsoft Aerial';
+		 * public static const CRI:String = 'CRI'; */
+		public static const MICROSOFT1:String = 'Microsoft Aerial';
 		public static const MICROSOFT2:String = 'Microsoft RoadMap';
-		public static const MICROSOFT3:String = 'Microsoft Hybrid';*/
+		public static const MICROSOFT3:String = 'Microsoft Hybrid';
 		private static const _providersToSRS:Dictionary = new Dictionary();
 
 	}
