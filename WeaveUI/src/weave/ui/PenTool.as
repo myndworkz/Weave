@@ -646,7 +646,7 @@ package weave.ui
 		
 		private static function handleChangeMode(e:ContextMenuEvent):void
 		{
-			var contextMenu:ContextMenu = (Application.application as Application).contextMenu;
+			var contextMenu:ContextMenu = (WeaveAPI.topLevelApplication as UIComponent).contextMenu;
 			if (!contextMenu)
 				return;
 			
@@ -685,7 +685,7 @@ package weave.ui
 		 */
 		private static function handleContextMenuOpened(e:ContextMenuEvent):void
 		{
-			var contextMenu:ContextMenu = (Application.application as Application).contextMenu;
+			var contextMenu:ContextMenu = (WeaveAPI.topLevelApplication as UIComponent).contextMenu;
 			if (!contextMenu)
 				return;
 
