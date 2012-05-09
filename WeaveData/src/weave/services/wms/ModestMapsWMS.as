@@ -289,7 +289,7 @@ package weave.services.wms
 			else if (_mapProvider is OpenStreetMapProvider)
 				maxZoom = 18;
 			else if (_mapProvider is MicrosoftProvider)
-				maxZoom = 25;
+				maxZoom = 20;
 			else if (_mapProvider is YahooAerialMapProvider)
 				maxZoom = 20;
 			else if (_mapProvider is YahooRoadMapProvider)
@@ -301,7 +301,7 @@ package weave.services.wms
 			else if (_mapProvider is OpenMapQuestProvider)
 				maxZoom = 15;
 			else if (_mapProvider is MichiganStreetsProvider)
-				maxZoom = 25;
+				maxZoom = 20;
 			else if (_mapProvider is OpenMapQuestAerialProvider)
 				maxZoom = 7;
 			
