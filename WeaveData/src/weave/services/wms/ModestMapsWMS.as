@@ -289,7 +289,7 @@ package weave.services.wms
 			else if (_mapProvider is OpenStreetMapProvider)
 				maxZoom = 18;
 			else if (_mapProvider is MicrosoftProvider)
-				maxZoom = 20;
+				maxZoom = 25;
 			else if (_mapProvider is YahooAerialMapProvider)
 				maxZoom = 20;
 			else if (_mapProvider is YahooRoadMapProvider)
@@ -301,11 +301,13 @@ package weave.services.wms
 			else if (_mapProvider is OpenMapQuestProvider)
 				maxZoom = 15;
 			else if (_mapProvider is MichiganStreetsProvider)
-				maxZoom = 20;
+				maxZoom = 25;
 			else if (_mapProvider is OpenMapQuestAerialProvider)
 				maxZoom = 7;
 			
-			
+			if (_mapProvider is MichiganStreetsProvider){
+				//Do what makes the error stop
+			}
 			// very few providers have a zoom of 0, so the loop starts at 1 to prevent enforcement later
 			for (var i:int = 1; i <= maxZoom; ++i) // 20 is max provided in ModestMaps Library
 			{
