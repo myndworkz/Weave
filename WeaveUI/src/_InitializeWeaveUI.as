@@ -19,8 +19,6 @@
 
 package
 {
-	import flash.system.Security;
-	
 	import weave.api.WeaveAPI;
 	import weave.api.core.IErrorManager;
 	import weave.api.core.IExternalSessionStateInterface;
@@ -60,6 +58,7 @@ package
 	import weave.editors.GeometryLabelPlotterEditor;
 	import weave.editors.GeometryPlotterEditor;
 	import weave.editors.GridLinePlotterEditor;
+	import weave.editors.ImageGlyphPlotterEditor;
 	import weave.editors.SessionHistorySlider;
 	import weave.editors.WFSDataSourceEditor;
 	import weave.editors.WMSPlotterEditor;
@@ -73,6 +72,7 @@ package
 	import weave.visualization.plotters.GeometryLabelPlotter;
 	import weave.visualization.plotters.GeometryPlotter;
 	import weave.visualization.plotters.GridLinePlotter;
+	import weave.visualization.plotters.ImageGlyphPlotter;
 	import weave.visualization.plotters.WMSPlotter;
 
 	/**
@@ -116,8 +116,10 @@ package
 		EditorManager.registerEditor(WMSPlotter, WMSPlotterEditor);
 		EditorManager.registerEditor(GridLinePlotter, GridLinePlotterEditor);
 		EditorManager.registerEditor(AxisLabelPlotter, AxisLabelPlotterEditor);
+		EditorManager.registerEditor(ImageGlyphPlotter, ImageGlyphPlotterEditor);
 		
 		EditorManager.registerEditor(ColorRamp, ColorRampEditor);
+//		EditorManager.registerEditor(HistogramTool, HistogramToolEditor);
 		
 		EditorManager.registerEditor(SessionStateLog, SessionHistorySlider);
 		

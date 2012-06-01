@@ -40,7 +40,7 @@
 			</ui:Indent>
 			<mx:VBox visible="{keyColumnComboBox.selectedItem}">
 				<mx:Label text="What do these keys correspond to?"/>
-				<admin:GeometryCollectionDialog paddingLeft="{paddingIndent}" id="geometrySelector" keyType="{tableSelector.activeTable}"/>
+				<admin:GeometryCollectionDialog paddingLeft="{paddingIndent}" id="geometrySelector" defaultKeyType="{tableSelector.activeTable}"/>
 				
 				<mx:CheckBox change="handleKeyColumnChange()" id="secondaryKeyColumnCheckBox" label="Format data for Dimension Slider" selected="false"/>
 				<ui:Indent paddingLeft="{paddingIndent}"
@@ -89,12 +89,6 @@
 			
 			private function handleKeyColumnChange():void
 			{
-				if (secondaryKeyColumnCheckBox.selected && generateFilterColumnsCheckBox.selected)
-				{
-					generateFilterColumnsCheckBox.selected = false;
-					secondaryKeyColumnCheckBox.selected = false;
-				}
-
 				keyColumnComboBox.errorString = '';
 				sqlSecondaryKeyColumnCombo.errorString = '';
 				

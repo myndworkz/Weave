@@ -25,9 +25,11 @@ package weave
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.SecurityErrorEvent;
+	import flash.events.TimerEvent;
 	import flash.external.ExternalInterface;
 	import flash.net.FileFilter;
 	import flash.net.FileReference;
+	import flash.net.SharedObject;
 	import flash.net.URLRequest;
 	import flash.net.URLVariables;
 	import flash.net.navigateToURL;
@@ -35,6 +37,7 @@ package weave
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.utils.ByteArray;
+	import flash.utils.Timer;
 	import flash.utils.getQualifiedClassName;
 	
 	import mx.collections.ArrayCollection;
@@ -89,6 +92,7 @@ package weave
 	import weave.ui.SelectionManager;
 	import weave.ui.SessionStateEditor;
 	import weave.ui.SubsetManager;
+	import weave.ui.TranslationPanel;
 	import weave.ui.WeaveProgressBar;
 	import weave.ui.WizardPanel;
 	import weave.ui.annotation.SessionedTextBox;
@@ -145,7 +149,6 @@ package weave
 			waitForApplicationComplete();
 		}
 
-		
 		/**
 		 * This needs to be a function because FlashVars can't be fetched while the application is loading.
 		 */
@@ -201,6 +204,10 @@ package weave
 				{
 					_this.enabled = true;
 					adminService = pendingAdminService;
+					
+					saveTimer.addEventListener(TimerEvent.TIMER, saveRecoverPoint);
+					saveTimer.start();
+				
 					setupVisMenuItems(); // make sure 'save session state to server' is shown
 					downloadConfigFile();
 				};
@@ -234,7 +241,7 @@ package weave
 		
 		private function downloadConfigFile():void
 		{
-			if (Weave.handleWeaveReload())
+			if (getFlashVarRecover() || Weave.handleWeaveReload())
 			{
 				handleConfigFileDownloaded();
 			}
@@ -329,6 +336,10 @@ package weave
 		{
 			return _flashVars['adminSession'] as String;
 		}
+		private function getFlashVarRecover():Boolean
+		{
+			return StandardLib.asBoolean(_flashVars['recover'] as String);
+		}
 		
 		/**
 		 * Gets the name of the config file.
@@ -384,7 +395,7 @@ package weave
 		private var selectionKeySet:KeySet = Weave.root.getObject(Weave.DEFAULT_SELECTION_KEYSET) as KeySet;
 		private function handleSelectionChange():void
 		{
-			_selectionIndicatorText.text = selectionKeySet.keys.length.toString() + " Records Selected";
+			_selectionIndicatorText.text = selectionKeySet.keys.length.toString() + lang(" Records Selected");
 			try
 			{
 				if (selectionKeySet.keys.length == 0 || !Weave.properties.showSelectedRecordsText.value)
@@ -468,6 +479,19 @@ package weave
 
 		private var adminService:LocalAsyncService = null;
 		
+		private const saveTimer:Timer = new Timer( 10000 );
+		private static const RECOVER_SHARED_OBJECT:String = "WeaveAdminConsoleRecover";
+		private function saveRecoverPoint(event:Event = null):void
+		{
+			var cookie:SharedObject = SharedObject.getLocal(RECOVER_SHARED_OBJECT);
+			cookie.data[RECOVER_SHARED_OBJECT] = Weave.createWeaveFileContent();
+			cookie.flush();
+		}
+		private function getRecoverPoint():ByteArray
+		{
+			var cookie:SharedObject = SharedObject.getLocal(RECOVER_SHARED_OBJECT);
+			return cookie.data[RECOVER_SHARED_OBJECT] as ByteArray;
+		}
 		
 		private function copySessionStateToClipboard():void
 		{
@@ -762,7 +786,7 @@ package weave
 				_weaveMenu.addMenuItemToMenu(_sessionMenu, new WeaveMenuItem("Export session history...", handleExportSessionState));
 				_weaveMenu.addSeparatorToMenu(_sessionMenu);
 				_weaveMenu.addMenuItemToMenu(_sessionMenu, new WeaveMenuItem(
-					function():String { return (Weave.properties.showSessionHistoryControls.value ? "Hide" : "Show") + " session history controls"; },
+					function():String { return lang( (Weave.properties.showSessionHistoryControls.value ? "Hide" : "Show") + " session history controls" ); },
 					function():void { Weave.properties.showSessionHistoryControls.value = !Weave.properties.showSessionHistoryControls.value; }
 				));
 				if (Weave.ALLOW_PLUGINS)
@@ -779,9 +803,11 @@ package weave
 							function():String
 							{
 								var collabTool:CollaborationTool = CollaborationTool.instance;
-								return collabTool && collabTool.collabService.isConnected
+								return lang(
+									collabTool && collabTool.collabService.isConnected
 									? "Open collaboration window"
-									: "Connect to collaboration server (Beta)...";
+									: "Connect to collaboration server (Beta)..."
+								);
 							},
 							DraggablePanel.openStaticInstance,
 							[CollaborationTool]
@@ -823,6 +849,7 @@ package weave
 				_weaveMenu.addMenuItemToMenu(_aboutMenu, new WeaveMenuItem("Visit OICWeave.org", function ():void {
 					navigateToURL(new URLRequest("http://www.oicweave.org"), "_blank");
 				}));
+				_weaveMenu.addMenuItemToMenu(_aboutMenu, new WeaveMenuItem("Edit translations (Beta)", DraggablePanel.openStaticInstance, [TranslationPanel]));
 			}
 		}
 		
@@ -837,6 +864,8 @@ package weave
 			DebugTimer.begin();
 			try
 			{
+				if (getFlashVarRecover())
+					fileContent = getRecoverPoint();
 				// attempt to parse as a Weave archive
 				if (fileContent)
 				{
@@ -1012,6 +1041,17 @@ package weave
 			var click:Function;
 			var enable:*;
 			
+			// edit
+			label = "Edit This Window";
+			click = function():void {
+					if (topPanel)
+						topPanel.toggleControlPanel();
+				};
+			enable = function():Boolean {
+					return (topPanel && topPanel.controlPanel);
+				};
+			_weaveMenu.addMenuItemToMenu(_windowMenu, new WeaveMenuItem(label, click, null, enable) );
+			
 			// minimize
 			label = "Minimize This Window";
 			click = function():void {
@@ -1027,8 +1067,8 @@ package weave
 			// maximize/restore
 			label = function():String { 
 					if ( topPanel && topPanel.maximized.value) 
-						return 'Restore Panel Size'; 
-					return 'Maximize This Window';
+						return lang('Restore Panel Size'); 
+					return lang('Maximize This Window');
 				};
 			click = function():void { 
 			    	if (topPanel)
@@ -1080,9 +1120,9 @@ package weave
 			{
 				label = function():String {
 					if ( stage && stage.displayState == StageDisplayState.FULL_SCREEN) 
-						return 'Exit Full-screen mode'; 
+						return lang('Exit Full-screen mode'); 
 					
-					return 'Enter Full-screen mode';
+					return lang('Enter Full-screen mode');
 				};
 				click = function():void{
 					if (stage && stage.displayState == StageDisplayState.NORMAL )
@@ -1094,7 +1134,7 @@ package weave
 						}
 						catch (e:Error)
 						{
-							Alert.show("This website has not enabled full-screen mode, so this option will now be disabled.", "Full-screen mode not allowed");
+							Alert.show(lang("This website has not enabled full-screen mode, so this option will now be disabled."), lang("Full-screen mode not allowed"));
 							Weave.properties.enableFullScreen.value = false;
 						}
 					}
@@ -1388,7 +1428,7 @@ package weave
 			if (_panelPrintContextMenuItem)
 			{
 				// If this tool is valid (we are over a tool), then we want this menu item enabled, otherwise don't allow users to choose it
-				_panelPrintContextMenuItem.caption = "Print/Export Image of " + (_panelToExport ? _panelToExport.title : "...");
+				_panelPrintContextMenuItem.caption = lang("Print/Export Image of " + (_panelToExport ? _panelToExport.title : "..."));
 				_panelPrintContextMenuItem.enabled = (_panelToExport != null);
 			}
 			if (_exportCSVContextMenuItem)
@@ -1404,7 +1444,7 @@ package weave
 				_weaveFileRef.addEventListener(Event.SELECT,   function (e:Event):void { _weaveFileRef.load(); } );
 				_weaveFileRef.addEventListener(Event.COMPLETE, function (e:Event):void { loadSessionState(e.target.data, _weaveFileRef.name); } );
 			}
-			_weaveFileRef.browse([new FileFilter("Weave files", "*.weave"),new FileFilter("All files", "*.*")]);
+			_weaveFileRef.browse([new FileFilter(lang("Weave files"), "*.weave"),new FileFilter(lang("All files"), "*.*")]);
 		}
 		
 		private function handleExportSessionState():void
@@ -1420,8 +1460,8 @@ package weave
 			popup = PopUpManager.createPopUp(this, AlertTextBox) as AlertTextBox;
 			popup.allowEmptyInput = true;
 			popup.textInput = WeaveAPI.CSVParser.createCSV([Weave.getPluginList()]);
-			popup.title = "Specify which plugins to load";
-			popup.message = "List plugin .SWC files, separated by commas. Weave will reload itself if plugins have to be unloaded.";
+			popup.title = lang("Specify which plugins to load");
+			popup.message = lang("List plugin .SWC files, separated by commas. Weave will reload itself if plugins have to be unloaded.");
 			popup.addEventListener(AlertTextBoxEvent.BUTTON_CLICKED, handlePluginsChange);
 			PopUpManager.centerPopUp(popup);
 		}
