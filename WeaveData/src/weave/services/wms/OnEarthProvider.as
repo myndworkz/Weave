@@ -356,6 +356,15 @@ package weave.services.wms
 						fullRequestString += _requestURLParams[j];
 					if (_urlToTile[fullRequestString] != undefined)
 						continue;
+										
+					var bbx:String = _tempBounds.getXNumericMin() +","+ _tempBounds.getYNumericMin() +","
+					+ _tempBounds.getXNumericMax() +","+ _tempBounds.getYNumericMax();
+					
+					
+					//fullRequestString = "http://maps1.cridata.org/py/ogcserver/"
+					//	+ "criWMS.py?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&BBOX="
+					//	+ bbx + "&SRS=EPSG:4326&WIDTH="
+					//	+ "1339&HEIGHT=772&LAYERS=michigan_highway&STYLES=&FORMAT=image/png&DPI=72&TRANSPARENT=true";
 					
 					//trace(fullRequestString);
 					var urlRequest:URLRequest = new URLRequest(fullRequestString);
@@ -367,8 +376,10 @@ package weave.services.wms
 				}
 			}
 			
+			lowerQualTiles = completedTiles;
 			lowerQualTiles = lowerQualTiles.sort(tileSortingComparison);
-			return lowerQualTiles.concat(completedTiles);
+			//return lowerQualTiles.concat(completedTiles);
+			return lowerQualTiles;
 		}
 		
 		/**
