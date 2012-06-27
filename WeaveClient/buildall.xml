@@ -136,6 +136,32 @@
 		<antcall target="undeploy-app"/>
 		<antcall target="deploy-app"/>
 	</target>
+	
+	
+	<target name="deploy_prod" depends="build">
+			<property name="target.server" value="${prod.server}"/>
+			<property name="target.manager.url" value="${prod.manager.url}"/>
+			<property name="target.username" value="${prod.username}"/>
+			<property name="target.password" value="${prod.password}"/>
+			<antcall target="deploy-app"/>
+		</target>
+
+		<target name="undeploy_prod" depends="build">
+			<property name="target.server" value="${prod.server}"/>
+			<property name="target.manager.url" value="${prod.manager.url}"/>
+			<property name="target.username" value="${prod.username}"/>
+			<property name="target.password" value="${prod.password}"/>
+			<antcall target="undeploy-app"/>
+		</target>
+
+		<target name="redeploy_prod" depends="build">
+			<property name="target.server" value="${prod.server}"/>
+			<property name="target.manager.url" value="${prod.manager.url}"/>
+			<property name="target.username" value="${prod.username}"/>
+			<property name="target.password" value="${prod.password}"/>
+			<antcall target="undeploy-app"/>
+			<antcall target="deploy-app"/>
+		</target>
 
 	<!-- This target will extract the swf files from the swc archives
 		and extract them to the WEAVE_DESTROOT -->
