@@ -37,7 +37,6 @@ package weave.utils
 	import weave.core.LinkableFunction;
 	import weave.core.LinkableHashMap;
 	import weave.primitives.Bounds2D;
-	import weave.ui.ProbeToolTipWindow;
 	
 	/**
 	 * A static class containing functions to manage a list of probed attribute columns
@@ -47,7 +46,6 @@ package weave.utils
 	public class ProbeTextUtils
 	{
 		public static const enableProbeToolTip:LinkableBoolean = new LinkableBoolean(true);
-		public static const useUnobtrusiveToolTips:LinkableBoolean = new LinkableBoolean(false);
 		
 		public static function get probedColumns():ILinkableHashMap
 		{
@@ -174,7 +172,7 @@ package weave.utils
 		//For now the toolTipLocation.value parameter will be utilised by the ColorBinLegendTool. In the future this feature can be generalised for every tool.
 		public static function showProbeToolTip(probeText:String, stageX:Number, stageY:Number, stageBounds:IBounds2D = null, margin:int = 5):void
 		{
-			if( !useUnobtrusiveToolTips.value )
+			if( WeaveAPI.globalHashMap.getObject("ProbeToolTipWindow") == null)
 			{
 				if (!probeToolTip)
 					probeToolTip = ToolTipManager.createToolTip('', 0, 0);
@@ -208,7 +206,7 @@ package weave.utils
 				// calculate y coordinate
 				var y:int;
 				// calculate y pos depending on toolTipAbove setting
-				if (toolTipAbove && !useUnobtrusiveToolTips.value)
+				if (toolTipAbove)
 				{
 					y = stageY - (probeToolTip.height + 2 * margin);
 					if (yAxisToolTip != null)
@@ -227,7 +225,7 @@ package weave.utils
 				
 				// calculate x coordinate
 				var x:int;
-				if (cornerToolTip && !useUnobtrusiveToolTips.value)
+				if (cornerToolTip)
 				{
 					// want toolTip corner to be near probe point
 					if (toolTipToTheLeft)
@@ -257,17 +255,13 @@ package weave.utils
 					x += 10;
 				
 				// enforce min/max values and position tooltip
-				if(!useUnobtrusiveToolTips.value)
-				{
-					x = Math.max(xMin, Math.min(x, xMax));
-					y = Math.max(yMin, Math.min(y, yMax));
-				}
+				x = Math.max(xMin, Math.min(x, xMax));
+				y = Math.max(yMin, Math.min(y, yMax));
 			
 				probeToolTip.move(x, y);
 				return;
 			}
-			if( Weave.root.getObjects(ProbeToolTipWindow)[0] != null )
-				(Weave.root.getObjects(ProbeToolTipWindow)[0] as ProbeToolTipWindow).probeTextArea.text = probeText;
+			return;
 		}
 		
 		

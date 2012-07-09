@@ -62,6 +62,7 @@ package weave
 		MXClasses; // Referencing this allows all Flex classes to be dynamically created at runtime.
 		
 		public static var ALLOW_PLUGINS:Boolean = false; // TEMPORARY
+
 		public static var debug:Boolean = false;
 		
 		
@@ -226,8 +227,6 @@ package weave
 			
 			if (needReload)
 			{
-				if (!newWeaveContent)
-					newWeaveContent = createWeaveFileContent();
 				externalReload(newWeaveContent);
 			}
 			else
@@ -383,8 +382,11 @@ package weave
 		/**
 		 * This function will restart the Flash application by reloading the SWF that is embedded in the browser window.
 		 */
-		private static function externalReload(weaveContent:Object):void
+		public static function externalReload(weaveContent:Object = null):void
 		{
+			if (!weaveContent)
+				weaveContent = createWeaveFileContent();
+			
 			var obj:SharedObject = SharedObject.getLocal(WEAVE_RELOAD_SHARED_OBJECT);
 			var uid:String = WEAVE_RELOAD_SHARED_OBJECT;
 			if (ExternalInterface.objectID)

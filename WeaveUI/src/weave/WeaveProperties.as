@@ -48,7 +48,6 @@ package weave
 	import weave.core.LinkableNumber;
 	import weave.core.LinkableString;
 	import weave.core.SessionManager;
-	import weave.core.weave_internal;
 	import weave.data.AttributeColumns.SecondaryKeyNumColumn;
 	import weave.data.AttributeColumns.StreamedGeometryColumn;
 	import weave.data.CSVParser;
@@ -82,8 +81,6 @@ package weave
 	import weave.visualization.tools.TimeSliderTool;
 	import weave.visualization.tools.TransposedTableTool;
 
-	use namespace weave_internal;
-	
 	/**
 	 * A list of global settings for a Weave instance.
 	 */
@@ -146,9 +143,10 @@ package weave
 		}
 		
 		public static const embeddedFonts:ArrayCollection = new ArrayCollection();
-		private static function loadWeaveFontsSWF():void
+		private function loadWeaveFontsSWF():void
 		{
 			WeaveAPI.URLRequestUtils.getURL(
+				null,
 				new URLRequest('WeaveFonts.swf'),
 				function(event:ResultEvent, token:Object = null):void
 				{
@@ -224,9 +222,10 @@ package weave
 		public const collabSpectating:LinkableBoolean = new LinkableBoolean(false);
 		public const showCollaborationMenuItem:LinkableBoolean = new LinkableBoolean(true); // menu item
 		
-		
+		public const showDisabilityOptions:LinkableBoolean = new LinkableBoolean(true)// Show Disability Options tools menu
 		public const showColorController:LinkableBoolean = new LinkableBoolean(true); // Show Color Controller option tools menu
 		public const showProbeToolTipEditor:LinkableBoolean = new LinkableBoolean(true);  // Show Probe Tool Tip Editor tools menu
+		public const showProbeWindow:LinkableBoolean = new LinkableBoolean(true); // Show Probe Tool Tip Window in tools menu
 		public const showEquationEditor:LinkableBoolean = new LinkableBoolean(true); // Show Equation Editor option tools menu
 		public const enableNewUserWizard:LinkableBoolean = new LinkableBoolean(true); // Add New User Wizard option tools menu		
 
@@ -330,10 +329,13 @@ package weave
 		public const enableExportApplicationScreenshot:LinkableBoolean = new LinkableBoolean(true); // print/export application screenshot
 		
 		public const enableDataMenu:LinkableBoolean = new LinkableBoolean(true); // enable/disable Data Menu
+		public const enableLoadMyData:LinkableBoolean = new LinkableBoolean(true); // enable/disable Load MyData option
+		public const enableBrowseData:LinkableBoolean = new LinkableBoolean(true); // enable/disable Browse Data option
 		public const enableRefreshHierarchies:LinkableBoolean = new LinkableBoolean(true);
-		public const enableNewDataset:LinkableBoolean = new LinkableBoolean(true); // enable/disable New Dataset option
-		public const enableAddWeaveDataSource:LinkableBoolean = new LinkableBoolean(true); // enable/disable Add WeaveDataSource option
+		public const enableAddNewDatasource:LinkableBoolean = new LinkableBoolean(true); // enable/disable New Datasource option
+		public const enableEditDatasources:LinkableBoolean = new LinkableBoolean(true); // enable/disable Edit Datasources option
 		
+			
 		public const enableWindowMenu:LinkableBoolean = new LinkableBoolean(true); // enable/disable Window Menu
 		public const enableFullScreen:LinkableBoolean = new LinkableBoolean(false); // enable/disable FullScreen option
 		public const enableCloseAllWindows:LinkableBoolean = new LinkableBoolean(true); // enable/disable Close All Windows
@@ -357,6 +359,9 @@ package weave
 		public const enableSubsetSelectionBox:LinkableBoolean = new LinkableBoolean(true);// enable/disable Subset Selection Combo Box option
 		public const enableAddDataSource:LinkableBoolean = new LinkableBoolean(true);// enable/disable Manage saved subsets option
 		public const enableEditDataSource:LinkableBoolean = new LinkableBoolean(true);
+		public const enableNewDataset:LinkableBoolean = new LinkableBoolean(true); // enable/disable New Dataset option
+		public const enableAddWeaveDataSource:LinkableBoolean = new LinkableBoolean(true); // enable/disable Add WeaveDataSource option
+		
 		
 		public const dashboardMode:LinkableBoolean = new LinkableBoolean(false);	 // enable/disable borders/titleBar on windows
 		public const enableToolControls:LinkableBoolean = new LinkableBoolean(true); // enable tool controls (which enables attribute selector too)
@@ -445,7 +450,6 @@ package weave
 		
 		public const enableProbeLines:LinkableBoolean = new LinkableBoolean(true);
 		public function get enableProbeToolTip():LinkableBoolean { return ProbeTextUtils.enableProbeToolTip; }
-		public function get useUnobtrusiveToolTips():LinkableBoolean { return ProbeTextUtils.useUnobtrusiveToolTips; }
 
 		public const toolInteractions:InteractionController = new InteractionController();
 		

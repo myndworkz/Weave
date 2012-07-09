@@ -51,7 +51,7 @@ package weave.services.wms
 			var sourceCoord:Coordinate = sourceCoordinate(coord);
 		
 		
-			var urlString:String = "http://yourwmsserver.com/path/to/tilecache/"
+			var urlString:String = "http://maps1.cridata.org/py/tilecache-2.11/tilecache.cgi/1.0.0/wms-weave-osm-michigan-top-layer-3857-053112/"
 									+ sourceCoord.zoom + '/' + sourceCoord.column + '/'
 									+ sourceCoord.row 
 									+ '.png';
