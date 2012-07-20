@@ -147,8 +147,8 @@ package weave.data.AttributeColumns
 				{
 					var fmt:String = 'Warning: Key column values are not unique.  Record dropped due to duplicate key ({0}).  Attribute column: {1}';
 					var str:String = StringUtil.substitute(fmt, key.localName, _metadata.toXMLString());
-					if (Capabilities.isDebugger)
-						reportError(str);
+					//if (Capabilities.isDebugger)
+						//reportError(str);
 				}
 			}
 			
