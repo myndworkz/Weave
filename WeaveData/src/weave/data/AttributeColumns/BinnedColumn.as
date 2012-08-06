@@ -42,10 +42,9 @@ package weave.data.AttributeColumns
 	public class BinnedColumn extends ExtendedDynamicColumn implements IPrimitiveColumn
 	{
 		public function BinnedColumn()
+
 		{
 			binningDefinition.requestLocalObject(SimpleBinningDefinition, false);
-
-			registerLinkableChild(this, WeaveAPI.StatisticsCache.getColumnStatistics(internalDynamicColumn));
 		}
 
 		/**
@@ -97,7 +96,8 @@ package weave.data.AttributeColumns
 		 */
 		private function validateBins():void
 		{
-			if (_prevTriggerCounter != triggerCounter && !WeaveAPI.SessionManager.linkableObjectIsBusy(internalDynamicColumn))
+			var busy:Boolean = WeaveAPI.SessionManager.linkableObjectIsBusy(internalDynamicColumn);
+			if (_prevTriggerCounter != triggerCounter && !busy)
 			{
 				_prevTriggerCounter = triggerCounter;
 
@@ -161,7 +161,8 @@ package weave.data.AttributeColumns
 
 		private function _asyncComplete():void
 		{
-			_prevTriggerCounter++; // increase by 1 now to account for _derivedBins trigger
+			if (_prevTriggerCounter == triggerCounter)
+				_prevTriggerCounter++; // increase by 1 now to account for _derivedBins trigger
 			_derivedBins.triggerCallbacks();
 			_derivedBins.resumeCallbacks(true); // allow callbacks to run now
 		}
@@ -211,6 +212,7 @@ package weave.data.AttributeColumns
 
 		public function getBinIndexFromDataValue(value:*):Number
 		{
+			validateBins();
 			return _derivedBins.getBinIndexFromDataValue(value);
 		}
 

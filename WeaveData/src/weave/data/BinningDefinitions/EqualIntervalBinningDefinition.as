@@ -55,6 +55,7 @@ package weave.data.BinningDefinitions
 			
 			//var integerValuesOnly:Boolean = column is StringColumn;
 			var stats:IColumnStatistics = WeaveAPI.StatisticsCache.getColumnStatistics(column);
+			_statsJuggler.target = stats;
 			var dataMin:Number = stats.getMin();
 			var dataMax:Number = stats.getMax();
 			var binMin:Number;
@@ -97,7 +98,7 @@ package weave.data.BinningDefinitions
 				tempNumberClassifier.maxInclusive.value = maxInclusive;
 				
 				//first get name from overrideBinNames
-				name = getNameFromOverrideString(iBin);
+				name = getOverrideNames()[iBin];
 				//if it is empty string set it from generateBinLabel
 				if(!name)
 					name = tempNumberClassifier.generateBinLabel(column as IPrimitiveColumn);

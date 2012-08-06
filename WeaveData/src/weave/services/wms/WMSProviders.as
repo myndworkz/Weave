@@ -1,20 +1,20 @@
 /*
-    Weave (Web-based Analysis and Visualization Environment)
-    Copyright (C) 2008-2011 University of Massachusetts Lowell
+	Weave (Web-based Analysis and Visualization Environment)
+	Copyright (C) 2008-2011 University of Massachusetts Lowell
 
-    This file is a part of Weave.
+	This file is a part of Weave.
 
-    Weave is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, Version 3,
-    as published by the Free Software Foundation.
+	Weave is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License, Version 3,
+	as published by the Free Software Foundation.
 
-    Weave is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	Weave is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Weave.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with Weave.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -25,7 +25,7 @@ package weave.services.wms
 	/**
 	 * This class is a collection of static objects and methods regarding the
 	 * valid serivces provided for WMS layers.
-	 * 
+	 *
 	 * @author kmonico
 	 */
 	public final class WMSProviders
@@ -37,15 +37,15 @@ package weave.services.wms
 			_providersToSRS[MAPQUEST] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
 			_providersToSRS[MAPQUEST_AERIAL] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
 			_providersToSRS[CRI_MM] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
-			
-			
-				
-				//_providersToSRS[CRI] = CriProvider.IMAGE_PROJECTION_SRS;
+			_providersToSRS[STAMEN_TONER] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
+			_providersToSRS[STAMEN_TERRAIN] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
+			_providersToSRS[STAMEN_WATERCOLOR] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
+			//_providersToSRS[CRI] = CriProvider.IMAGE_PROJECTION_SRS;
 			_providersToSRS[MICROSOFT1] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
 			_providersToSRS[MICROSOFT2] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
 			_providersToSRS[MICROSOFT3] = ModestMapsWMS.IMAGE_PROJECTION_SRS;
 		} /** END STATIC CODE BLOCK **/
-		
+
 		/**
 		 * Gets the valid names of WMS Providers.
 		 */
@@ -55,22 +55,22 @@ package weave.services.wms
 
 			for (var key:String in _providersToSRS)
 				result.push(key);
-			
+
 			result.sort();
 			return result;
 		}
-		
+
 		/**
 		 * This function will get the SRS code for the WMS provider.
 		 */
 		public static function getSRS(provider:String):String
 		{
 			var temp:String = _providersToSRS[provider] as String;
-			
+
 			// should not occur
 			if (temp == null)
 				return '';
-						
+
 			return temp;
 		}
 
@@ -80,7 +80,9 @@ package weave.services.wms
 		public static const MAPQUEST:String = 'Open MapQuest';
 		public static const MAPQUEST_AERIAL:String = 'Open MapQuest Aerial';
 		public static const CRI_MM:String = 'CRI Modest Maps version';
-		
+		public static const STAMEN_TONER:String = 'Stamen Toner';
+		public static const STAMEN_TERRAIN:String = 'Stamen Terrain';
+		public static const STAMEN_WATERCOLOR:String = 'Stamen Watercolor';
 		/*
 		 * public static const CRI:String = 'CRI'; */
 		public static const MICROSOFT1:String = 'Microsoft Aerial';
@@ -90,3 +92,5 @@ package weave.services.wms
 
 	}
 }
+
+

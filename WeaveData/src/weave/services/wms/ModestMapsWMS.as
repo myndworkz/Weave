@@ -1,20 +1,20 @@
 /*
-    Weave (Web-based Analysis and Visualization Environment)
-    Copyright (C) 2008-2011 University of Massachusetts Lowell
+	Weave (Web-based Analysis and Visualization Environment)
+	Copyright (C) 2008-2011 University of Massachusetts Lowell
 
-    This file is a part of Weave.
+	This file is a part of Weave.
 
-    Weave is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, Version 3,
-    as published by the Free Software Foundation.
+	Weave is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License, Version 3,
+	as published by the Free Software Foundation.
 
-    Weave is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	Weave is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Weave.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with Weave.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -34,17 +34,17 @@ package weave.services.wms
 	import com.modestmaps.mapproviders.yahoo.YahooHybridMapProvider;
 	import com.modestmaps.mapproviders.yahoo.YahooOverlayMapProvider;
 	import com.modestmaps.mapproviders.yahoo.YahooRoadMapProvider;
-	
+
 	import flash.display.Bitmap;
 	import flash.net.URLRequest;
 	import flash.system.Security;
-	
+
 	import mx.rpc.events.FaultEvent;
 	import mx.rpc.events.ResultEvent;
-	
+
 	import org.openscales.proj4as.ProjConstants;
 	import org.openscales.proj4as.proj.ProjMerc;
-	
+
 	import weave.api.WeaveAPI;
 	import weave.api.primitives.IBounds2D;
 	import weave.api.reportError;
@@ -55,7 +55,7 @@ package weave.services.wms
 	/**
 	 * This class is a wrapper around the ModestMaps library for both Microsoft and Yahoo
 	 * WMS providers.
-	 * 
+	 *
 	 * @author kmonico
 	 */
 	public class ModestMapsWMS extends AbstractWMS implements IWMSService
@@ -67,13 +67,13 @@ package weave.services.wms
 			_tempBounds.copyFrom(_worldBoundsMercator);
 			setReprojectedBounds(_tempBounds, _worldBoundsMercator, _tileProjectionSRS, _srs); // get world bounds in our Mercator
 		}
-		
+
 		override public function setProvider(provider:String):void
 		{
 			switch (provider)
 			{
 				// we cannot use Microsoft services, but we can keep the code 
-				
+
 				case 'Microsoft Aerial':
 					_mapProvider = new MicrosoftAerialMapProvider();
 					break;
@@ -98,32 +98,41 @@ package weave.services.wms
 				case WMSProviders.MAPQUEST_AERIAL:
 					_mapProvider = new OpenMapQuestAerialProvider();
 					break;
+				case WMSProviders.STAMEN_TONER:
+					_mapProvider = new StamenProvider(StamenProvider.STYLE_TONER);
+					break;
+				case WMSProviders.STAMEN_TERRAIN:
+					_mapProvider = new StamenProvider(StamenProvider.STYLE_TERRAIN);
+					break;
+				case WMSProviders.STAMEN_WATERCOLOR:
+					_mapProvider = new StamenProvider(StamenProvider.STYLE_WATERCOLOR);
+					break;
 				default:
 					reportError("Attempt to set invalid map provider.");
 					return;
 					break;
 			}
-			
+
 			_imageWidth = _mapProvider.tileWidth;
 			_imageHeight = _mapProvider.tileHeight;
 			_currentTileIndex = new WMSTileIndex();
 			triggerCallbacks();
 		}
-		
+
 		public function get provider():IMapProvider
 		{
 			return _mapProvider;
 		}
-		
+
 		static public const IMAGE_PROJECTION_SRS:String = 'EPSG:3857';
-		
+
 		// the provider from the ModestMaps library used for  
 		private var _mapProvider:IMapProvider = null;
-		
+
 		// image dimensions
 		private var _imageWidth:int;
 		private var _imageHeight:int;
-		
+
 		// some parameters about the tiles
 		private const _minWorldLon:Number = -180.0 + ProjConstants.EPSLN; // because Proj4 wraps coordinates
 		private const _maxWorldLon:Number = 180.0 - ProjConstants.EPSLN; // because Proj4 wraps coordinates
@@ -131,11 +140,11 @@ package weave.services.wms
 		private const _maxWorldLat:Number = Math.atan(ProjConstants.sinh(Math.PI)) * ProjConstants.R2D;
 		private const _worldBoundsMercator:IBounds2D = new Bounds2D(_minWorldLon, _minWorldLat, _maxWorldLon, _maxWorldLat);
 		private const _tileProjectionSRS:String = "EPSG:4326"; // constant for modestMaps
-		
+
 		// reusable objects
 		private const _tempCoord:Coordinate = new Coordinate(NaN, NaN, NaN); 
 		private const _tempLocation:Location = new Location(NaN, NaN);
-		
+
 		// non-specific names due to reuse
 		private const _tempBounds2:Bounds2D = new Bounds2D(); 
 		private const _tempBounds3:Bounds2D = new Bounds2D();
@@ -148,10 +157,10 @@ package weave.services.wms
 			var i:int
 			var copyDataBounds:Bounds2D = _tempBounds3;
 			var latLonCopyDataBounds:Bounds2D = _tempBounds4;
-			
+
 			// first determine zoom level using all of the data bounds in lat/lon
 			setTempCoordZoomLevel(dataBounds, screenBounds, lowerQuality); // this sets _tempCoord.zoom 
-			
+
 			// cancel all pending requests which aren't of this zoom level
 			for (i = 0; i < _pendingTiles.length; ++i)
 			{
@@ -163,12 +172,12 @@ package weave.services.wms
 					_pendingTiles.splice(i--, 1); // remove from the array and decrement i
 				}
 			}
-			
+
 			// now determine the data bounds we need to covert in lat/lon
 			copyDataBounds.copyFrom(dataBounds);
 			_worldBoundsMercator.constrainBounds(copyDataBounds, false);
 			setReprojectedBounds(copyDataBounds, latLonCopyDataBounds, _srs, _tileProjectionSRS);
-						
+
 			var latLonViewingDataBounds:Bounds2D = latLonCopyDataBounds;
 			var tileXYBounds:Bounds2D = _tempBounds2;
 			// calculate min and max tile x and y for the zoom level
@@ -184,8 +193,8 @@ package weave.services.wms
 			tileXYToDataBounds(tileXYBounds, latLonTileXYBounds, zoomScale);
 			setReprojectedBounds(latLonTileXYBounds, mercatorTileXYBounds, _tileProjectionSRS, _srs); 
 			_worldBoundsMercator.constrainBounds(mercatorTileXYBounds);
-			
-			
+
+
 			// get tiles we need using the map's mercator projection because the tiles' bounds must be in this projection
 			var lowerQualTiles:Array = _currentTileIndex.getTilesWithinBoundsAndZoomLevels(mercatorTileXYBounds, 0, _tempCoord.zoom - 1);
 			var completedTiles:Array = _currentTileIndex.getTilesWithinBounds(mercatorTileXYBounds, _tempCoord.zoom);
@@ -199,14 +208,14 @@ package weave.services.wms
 					thisTileXY.setBounds(x, y, x + 1, y + 1);
 					tileXYToDataBounds(thisTileXY, thisTileLatLon, zoomScale);
 					setReprojectedBounds(thisTileLatLon, thisTileMercator, _tileProjectionSRS, _srs);
-					
+
 					_tempCoord.row = y;
 					_tempCoord.column = x;
-					
+
 					// if the coordinate is wrapped around, we don't want it
 					if (_mapProvider.sourceCoordinate(_tempCoord).equalTo(_tempCoord) == false)
 						continue;
-					
+
 					// get the tile URLs... there should only be at most 1
 					var requestArray:Array = _mapProvider.getTileUrls(_tempCoord);
 					if (requestArray == null)
@@ -214,7 +223,7 @@ package weave.services.wms
 					var requestString:String = requestArray[0]; // always 1 string in this array
 					if (_urlToTile[requestString] != undefined)
 						continue;
-					
+
 					var urlRequest:URLRequest = new URLRequest(requestString);
 					// note that thisTileMercator is still in Mercator coords
 					var newTile:WMSTile = new WMSTile(thisTileMercator, _imageWidth, _imageHeight, urlRequest);
@@ -230,7 +239,7 @@ package weave.services.wms
 			lowerQualTiles = lowerQualTiles.sort(tileSortingComparison);
 			return lowerQualTiles;
 		}
-		
+
 		/**
 		 * This is a private method used for sorting an array of WMSTiles.
 		 */ 
@@ -244,7 +253,7 @@ package weave.services.wms
 			else
 				return 1;			
 		}
-		
+
 		/**
 		 * This function will reproject a bounds from a source projection to a destination projection.
 		 * @param sourceBounds The bounds to reproject.
@@ -260,10 +269,10 @@ package weave.services.wms
 			sourceBounds.getMaxPoint(_tempPoint);
 			WeaveAPI.ProjectionManager.transformPoint(sourceSRS, destSRS, _tempPoint);
 			destBounds.setMaxPoint(_tempPoint);
-			
+
 			destBounds.makeSizePositive();
 		}
-		
+
 		/**
 		 * This function sets the value of _tempCoord.zoom.
 		 */
@@ -272,7 +281,7 @@ package weave.services.wms
 			var requestedPrecision:Number = dataBounds.getArea() / screenBounds.getArea(); 
 			if (lowerQuality == true)
 				requestedPrecision *= 4; // go one level higher, which means twice the data width and height => 4 times
-			
+
 			var imageArea:int = _imageWidth * _imageHeight;
 			var worldArea:Number = _worldBoundsMercator.getArea();
 			var higherQualZoomLevel:int = Number.POSITIVE_INFINITY;
@@ -282,11 +291,11 @@ package weave.services.wms
 			var tempPrecision:Number;
 			var maxZoom:int = 1;
 			_tempCoord.zoom = 1;
-			
+
 			// not all providers allow the same zoom range
 			if (_mapProvider is BlueMarbleMapProvider)
 				maxZoom = 9;
-			else if (_mapProvider is OpenStreetMapProvider)
+			else if (_mapProvider is OpenStreetMapProvider || _mapProvider is StamenProvider)
 				maxZoom = 18;
 			else if (_mapProvider is MicrosoftProvider)
 				maxZoom = 25;
@@ -304,7 +313,7 @@ package weave.services.wms
 				maxZoom = 25;
 			else if (_mapProvider is OpenMapQuestAerialProvider)
 				maxZoom = 7;
-			
+
 			if (_mapProvider is MichiganStreetsProvider){
 				//Do what makes the error stop
 			}
@@ -321,7 +330,7 @@ package weave.services.wms
 					break;
 				}
 			}
-			
+
 			// compare the two qualities--the closer one is the one we want.
 			var higherPrecision:Number = (worldArea / Math.pow(2, 2 * higherQualZoomLevel)) / imageArea;
 			var lowerPrecision:Number = (worldArea / Math.pow(2, 2 * lowerQualZoomLevel)) / imageArea;
@@ -330,10 +339,10 @@ package weave.services.wms
 			else
 				_tempCoord.zoom = higherQualZoomLevel;
 		}
-		
+
 		/**
 		 * This function will convert a bounds in lat/long coordinates to tile (x, y) coordinates.
-		 * 
+		 *
 		 * @param sourceBounds The source bounds.
 		 * @param destbounds The destination.
 		 * @param zoomScale The value 2^zoom where zoom is the zoom level.
@@ -342,30 +351,30 @@ package weave.services.wms
 		private function dataBoundsToTileXY(sourceBounds:Bounds2D, destBounds:Bounds2D, zoomScale:Number):IBounds2D
 		{
 			sourceBounds.makeSizePositive();
-			
+
 			destBounds.xMin = zoomScale * (sourceBounds.xMin + 180) / 360.0; 
 			destBounds.xMax = zoomScale * (sourceBounds.xMax + 180) / 360.0; 
-			
+
 			var latRadians:Number = sourceBounds.yMin * Math.PI / 180;
 			destBounds.yMin = zoomScale * (1 - (Math.log(Math.tan(latRadians) + (1 / Math.cos(latRadians))) / Math.PI)) / 2.0;
 			latRadians = sourceBounds.yMax * Math.PI / 180;
 			destBounds.yMax = zoomScale * (1 - (Math.log(Math.tan(latRadians) + (1 / Math.cos(latRadians))) / Math.PI)) / 2.0;
-			
+
 			destBounds.makeSizePositive();
-			
+
 			destBounds.xMin = Math.floor(destBounds.xMin);
 			destBounds.yMin = Math.floor(destBounds.yMin);
 			destBounds.xMax = Math.ceil(destBounds.xMax);
 			destBounds.yMax = Math.ceil(destBounds.yMax);
-			
+
 			// although this may allow the max values to be zoomScale, which is 1 larger than number of tiles,
 			// it's not a problem because the tile starting at zoomScale,zoomScale is never requested.
 			_tempBounds.setBounds(0, 0, zoomScale, zoomScale); 
 			_tempBounds.constrainBounds(destBounds, false);
-			
+
 			return destBounds;
 		}
-		
+
 		/**
 		 * This function will convert bounds from tile x,y coordinates to Latitude and Longitude coordinates.
 		 * @param sourceBounds The source.
@@ -382,16 +391,16 @@ package weave.services.wms
 			destBounds.yMin = latRadians * 180.0 / Math.PI;
 			latRadians = Math.atan(ProjConstants.sinh(Math.PI * (1 - 2 * sourceBounds.yMax / zoomScale)));
 			destBounds.yMax = latRadians * 180.0 / Math.PI;
-			
+
 			destBounds.makeSizePositive();
 
 			return destBounds;
 		}
-		
+
 
 		/**
 		 * This function will download the image data for a tile.
-		 * 	
+		 *
 		 * @param tile The tile whose bitmap will be downloaded.
 		 */
 		public function downloadImage(tile:WMSTile):void
@@ -401,7 +410,7 @@ package weave.services.wms
 
 		/**
 		 * This function is called when an image is done downloading. The image is then cached and saved.
-		 * 
+		 *
 		 * @param event The result event.
 		 * @param token The tile.
 		 */
@@ -412,33 +421,33 @@ package weave.services.wms
 			tile.bitmapData = (event.result as Bitmap).bitmapData;
 			handleTileDownload(tile);
 		}
-		
+
 		/**
 		 * This function reports an error downloading an image. A download may fail with a valid URL.
-		 * 
+		 *
 		 * @param event The fault event.
 		 * @param token The tile.
 		 */
 		private function handleImageDownloadFault(event:FaultEvent, token:Object = null):void
 		{
 			var tile:WMSTile = token as WMSTile;
-			
+
 			tile.bitmapData = null; // a plotter should handle this
 			reportError(event);
-			
-			/** 
+
+			/**
 			 * @TODO This may not be appropriate because a download with a valid URL may fail.
 			 * It may be a better idea to try again once, and if it fails, never try again.
 			 **/
-			
+
 			handleTileDownload(tile);
 		}
-		
+
 		override public function getAllowedBounds():IBounds2D
 		{
 			return _worldBoundsMercator.cloneBounds(); 
 		}
-		
+
 		/**
 		 * The width of an image.
 		 */
@@ -446,7 +455,7 @@ package weave.services.wms
 		{
 			return _imageWidth;
 		}
-		
+
 		/**
 		 * The height of an image.
 		 */
@@ -454,12 +463,12 @@ package weave.services.wms
 		{
 			return _imageHeight;
 		}
-		
+
 		override public function getProvider():*
 		{
 			return _mapProvider;
 		}
-		
+
 		override public function getCreditInfo():String
 		{
 			if (_mapProvider is BlueMarbleMapProvider)
@@ -472,8 +481,11 @@ package weave.services.wms
 				return 'Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency';
 			else if (_mapProvider is MichiganStreetsProvider)
 				return 'Michigan Highways';
-			
+			else if (_mapProvider is StamenProvider)
+				return 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under CC BY SA.';			
 			return '';
 		}
 	}
 }
+
+
