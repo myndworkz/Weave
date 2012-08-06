@@ -1,26 +1,26 @@
 /*
-    Weave (Web-based Analysis and Visualization Environment)
-    Copyright (C) 2008-2011 University of Massachusetts Lowell
+	Weave (Web-based Analysis and Visualization Environment)
+	Copyright (C) 2008-2011 University of Massachusetts Lowell
 
-    This file is a part of Weave.
+	This file is a part of Weave.
 
-    Weave is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, Version 3,
-    as published by the Free Software Foundation.
+	Weave is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License, Version 3,
+	as published by the Free Software Foundation.
 
-    Weave is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	Weave is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Weave.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with Weave.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package weave.data.AttributeColumns
 {
 	import flash.utils.Dictionary;
-	
+
 	import weave.api.WeaveAPI;
 	import weave.api.data.AttributeColumnMetadata;
 	import weave.api.data.IAttributeColumn;
@@ -33,10 +33,10 @@ package weave.data.AttributeColumns
 	import weave.data.BinningDefinitions.CategoryBinningDefinition;
 	import weave.data.BinningDefinitions.DynamicBinningDefinition;
 	import weave.data.BinningDefinitions.SimpleBinningDefinition;
-	
+
 	/**
 	 * A binned column maps a record key to a bin key.
-	 * 
+	 *
 	 * @author adufilie
 	 */
 	public class BinnedColumn extends ExtendedDynamicColumn implements IPrimitiveColumn
@@ -47,7 +47,7 @@ package weave.data.AttributeColumns
 
 			registerLinkableChild(this, WeaveAPI.StatisticsCache.getColumnStatistics(internalDynamicColumn));
 		}
-		
+
 		/**
 		 * This number overrides the min,max metadata values.
 		 * @param propertyName The name of a metadata property.
@@ -65,7 +65,7 @@ package weave.data.AttributeColumns
 			}
 			return super.getMetadata(propertyName);
 		}
-		
+
 		/**
 		 * This defines how to generate the bins for this BinnedColumn.
 		 * This is used to generate the derivedBins.
@@ -82,7 +82,7 @@ package weave.data.AttributeColumns
 			validateBins();
 			return _derivedBins;
 		}
-		
+
 		private const _derivedBins:BinClassifierCollection = newLinkableChild(this, BinClassifierCollection); // returned by public getter
 		private var _binNames:Array = null; // maps a bin index to a bin name
 		private var _keyToBinIndexMap:Dictionary = null; // maps a record key to a bin index
@@ -90,7 +90,7 @@ package weave.data.AttributeColumns
 		private var _binnedKeysMap:Object = null; // maps a bin name to a list of keys in that bin
 		private var _largestBinSize:uint = 0;
 		private var _prevTriggerCounter:uint;
-		
+
 		/**
 		 * This function generates bins using the binning definition and the internal column,
 		 * and also saves lookups for mapping between bins and keys.
@@ -100,9 +100,9 @@ package weave.data.AttributeColumns
 			if (_prevTriggerCounter != triggerCounter && !WeaveAPI.SessionManager.linkableObjectIsBusy(internalDynamicColumn))
 			{
 				_prevTriggerCounter = triggerCounter;
-				
+
 				_derivedBins.delayCallbacks(); // make sure callbacks don't run until we're done
-				
+
 				_column = internalDynamicColumn.getInternalColumn();
 				_def = (binningDefinition.internalObject as IBinningDefinition);
 				// reset cached values
@@ -126,7 +126,7 @@ package weave.data.AttributeColumns
 				WeaveAPI.StageUtils.startTask(this, _asyncIterate, WeaveAPI.TASK_PRIORITY_BUILDING, _asyncComplete);
 			}
 		}
-		
+
 		private var _column:IAttributeColumn;
 		private var _def:IBinningDefinition;
 		private var _i:int;
@@ -153,12 +153,12 @@ package weave.data.AttributeColumns
 			{
 				var x:Number = 0;
 			}
-			
+
 			_i++;
-			
+
 			return _i / _keys.length;
 		}
-		
+
 		private function _asyncComplete():void
 		{
 			_prevTriggerCounter++; // increase by 1 now to account for _derivedBins trigger
@@ -175,7 +175,7 @@ package weave.data.AttributeColumns
 			validateBins();
 			return _binNames.length;
 		}
-		
+
 		/**
 		 * This is the largest number of records in any of the bins.
 		 */		
@@ -184,7 +184,7 @@ package weave.data.AttributeColumns
 			validateBins();
 			return _largestBinSize;
 		}
-		
+
 		/**
 		 * This function gets a list of keys in a bin.
 		 * @param binIndex The index of the bin to get the keys from.
@@ -197,7 +197,7 @@ package weave.data.AttributeColumns
 				return _binnedKeysArray[binIndex];
 			return null;
 		}
-		
+
 		/**
 		 * This function gets a list of keys in a bin.
 		 * @param binIndex The name of the bin to get the keys from.
@@ -208,7 +208,7 @@ package weave.data.AttributeColumns
 			validateBins();
 			return _binnedKeysMap[binName] as Array;
 		}
-		
+
 		public function getBinIndexFromDataValue(value:*):Number
 		{
 			return _derivedBins.getBinIndexFromDataValue(value);
@@ -228,29 +228,29 @@ package weave.data.AttributeColumns
 		override public function getValueFromKey(key:IQualifiedKey, dataType:Class = null):*
 		{
 			validateBins();
-			
+
 			var binIndex:Number = Number(_keyToBinIndexMap[key]); // undefined -> NaN
-			
+
 			// Number: return bin index
 			if (dataType == Number)
 				return binIndex;
-			
+
 			// String: return bin name
 			if (dataType == String)
 				return isNaN(binIndex) ? '' : _binNames[binIndex];
-			
+
 			if (isNaN(binIndex))
 				return undefined;
-			
+
 			// Array: return list of keys in the same bin
 			if (dataType == Array)
 				return _binnedKeysArray[binIndex] as Array;
-			
+
 			// default: return IBinClassifier
 			return _derivedBins.getObject(_binNames[binIndex]);
 		}
-		
-		
+
+
 		/**
 		 * From a bin index, this function returns the name of the bin.
 		 * @param value A bin index
@@ -259,14 +259,16 @@ package weave.data.AttributeColumns
 		public function deriveStringFromNumber(value:Number):String
 		{
 			validateBins();
-			
+
 			try
 			{
 				return _derivedBins.getNames()[value];
 			}
 			catch (e:Error) { } // ok to ignore Array[index] error
-			
+
 			return '';
 		}
 	}
 }
+
+
