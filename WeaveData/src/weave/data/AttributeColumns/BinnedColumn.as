@@ -42,7 +42,6 @@ package weave.data.AttributeColumns
 	public class BinnedColumn extends ExtendedDynamicColumn implements IPrimitiveColumn
 	{
 		public function BinnedColumn()
-
 		{
 			binningDefinition.requestLocalObject(SimpleBinningDefinition, false);
 		}
