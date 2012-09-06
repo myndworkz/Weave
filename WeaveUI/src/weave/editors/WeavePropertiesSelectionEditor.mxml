@@ -33,27 +33,27 @@
 	<mx:CheckBox label='Show "Selected Records" tooltip in lower-right corner'
 				 creationComplete="linkBindableProperty(Weave.properties.showSelectedRecordsText, event.target, 'selected')"/>
 				 
-	<mx:CheckBox toolTip="Check this box to enable bitmap filters used when probing or selecting"
+	<mx:CheckBox toolTip="{lang('Check this box to enable bitmap filters used when probing or selecting')}"
 				 id="enableBitmapFilters"
-				 label="Enable Bitmap Filters"
+				 label="{lang('Enable Bitmap Filters')}"
 				 selected="true"
 				 creationComplete="linkBindableProperty(Weave.properties.enableBitmapFilters, event.target, 'selected')"
 				 />
 	<mx:VBox enabled="{enableBitmapFilters.selected}">			
 		<mx:HBox>
-			<mx:Label text="Shadow Color" 
+			<mx:Label text="{lang('Shadow Color')}" 
 					  width="200"	
 					  textAlign="right"
-					  toolTip="Set the shadow color of selected points"/>
+					  toolTip="{lang('Set the shadow color of selected points')}"/>
 			<mx:ColorPicker id="shadowColor"
 							creationComplete="linkBindableProperty(Weave.properties.shadowColor, event.target, 'selectedColor' );"
 							/>
 		</mx:HBox>
 		<mx:HBox>
-			<mx:Label text="Shadow Alpha" 
+			<mx:Label text="{lang('Shadow Alpha')}" 
 					  width="200"	
 					  textAlign="right"
-					  toolTip="Set the opacity of selected points"/>
+					  toolTip="{lang('Set the opacity of selected points')}"/>
 			<mx:NumericStepper id="shadowAlpha"
 							   maximum="1"
 							   stepSize="0.1"
@@ -62,10 +62,10 @@
 		</mx:HBox>
 	</mx:VBox>
 	<mx:HBox>
-		<mx:Label text="Dashed Lines Parameters"
+		<mx:Label text="{lang('Dashed Lines Parameters')}"
 				  width="200"
 				  textAlign="right"
-				  toolTip="Set the values the gaps and lines of the dashed lines"
+				  toolTip="{lang('Set the values the gaps and lines of the dashed lines')}"
 				  id="dashedLabel"/>
 		<mx:TextInput id="dashedLinesString"
 					  creationComplete="linkBindableProperty(Weave.properties.dashedSelectionBox, event.target, 'text' );"

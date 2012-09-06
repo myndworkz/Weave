@@ -36,57 +36,57 @@
 	<mx:Canvas id="admin">
 		<mx:VBox>
 			<mx:HBox>
-				<mx:Label text="Selection" 
+				<mx:Label text="{lang('Selection')}" 
 						  width="125" 
-						  toolTip="Disable or enable the Selection Tool"/>
+						  toolTip="{lang('Disable or enable the Selection Tool')}"/>
 				
 				<mx:RadioButton groupName="selection"
 								buttonMode="true"
 								id="selecton"
-								label="On"
+								label="{lang('On')}"
 								width="50"
 								creationComplete="linkBindableProperty(Weave.properties.enableToolSelection,event.target,'selected')"/>
 				<mx:RadioButton groupName="selection"
 								buttonMode="true"
 								id="selectoff"
-								label="Off"
+								label="{lang('Off')}"
 								width="50"/>
 			</mx:HBox>
 			
 			
 			<mx:HBox>
-				<mx:Label text="Probing" 
+				<mx:Label text="{lang('Probing')}" 
 						  width="125"	
-						  toolTip="Disable or enable Probing"/>
+						  toolTip="{lang('Disable or enable Probing')}"/>
 				
 				<mx:RadioButton groupName="probing"
 								buttonMode="true"
 								id="probingon"
-								label="On"
+								label="{lang('On')}"
 								width="50"
 								creationComplete="linkBindableProperty(Weave.properties.enableToolProbe,event.target,'selected')"/>
 				<mx:RadioButton groupName="probing"
 								buttonMode="true"
 								id="probingoff"
-								label="Off"
+								label="{lang('Off')}"
 								width="50"/>
 			</mx:HBox>
 			
 			<mx:HBox>
-				<mx:Label text="Right-Click" 
+				<mx:Label text="{lang('Right-Click')}" 
 						  width="125" 
-						  toolTip="Disable or enable right-clicking"/>
+						  toolTip="{lang('Disable or enable right-clicking')}"/>
 				
 				<mx:RadioButton groupName="rightclick"
 								buttonMode="true"
 								id="rclickon"
-								label="On"
+								label="{lang('On')}"
 								width="50"
 								creationComplete="linkBindableProperty(Weave.properties.enableRightClick,event.target,'selected')"/>
 				<mx:RadioButton groupName="rightclick"
 								buttonMode="true"
 								id="rclickoff"
-								label="Off"
+								label="{lang('Off')}"
 								width="50"/>
 			</mx:HBox>
 		</mx:VBox>

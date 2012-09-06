@@ -72,7 +72,7 @@
 			catch (e:Error)
 			{
 				trace(e.getStackTrace());
-				trace(lang("ImageSnapshot.captureImage() failed, falling back to BitmapUtils.getPNGFromComponent()"));
+				trace("ImageSnapshot.captureImage() failed, falling back to BitmapUtils.getPNGFromComponent()");
 				_imageSource = BitmapUtils.getPNGFromComponent(component);
 			}
 		}

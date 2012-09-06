@@ -277,7 +277,7 @@ RTextEditor
 				{
 					if (Robj[i] == null)
 					{
-						trace(lang("WARNING! R Service returned null in results array at index ")+i);
+						trace("WARNING! R Service returned null in results array at index "+i);
 						continue;
 					}
 					var rResult:RResult = new RResult(Robj[i]);

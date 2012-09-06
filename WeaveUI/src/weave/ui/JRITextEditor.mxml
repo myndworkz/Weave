@@ -54,7 +54,7 @@ JRITextEditor
 			</mx:VBox>
 			<mx:VBox width="45%" height="100%">
 				<mx:TabNavigator id="tn"  width="100%" height="100%">
-					<mx:VBox label="{lang('User Script')" width="100%" height="100%" verticalGap="0">
+					<mx:VBox label="{lang('User Script')}" width="100%" height="100%" verticalGap="0">
 						<LabelWithWordWrap text="{lang('(2) Assign variables to your data (Separate by commas)')}"/>
 						<mx:TextArea id = "assignTA" width="100%" height="100%" wordWrap="false"/>
 						
@@ -129,7 +129,7 @@ JRITextEditor
 				<LabelWithWordWrap text="{lang('(6) Run your script on the server')}"/>
 				<mx:HBox>
 					<mx:Button id="B2" label="{lang('Run script')}"  click="viewAndSendbuttonClickHandler(event)"/>
-					<mx:CheckBox id="intermediateResultCB" label="{lang('Verbose')]" toolTip="{lang('Show intermediate results from R')}"/>
+					<mx:CheckBox id="intermediateResultCB" label="{lang('Verbose')}" toolTip="{lang('Show intermediate results from R')}"/>
 					<mx:CheckBox id="warningCB" label="{lang('Warnings')}" toolTip="{lang('Show warnings from R')}"/>
 				</mx:HBox>
 			</mx:VBox>
@@ -384,7 +384,7 @@ JRITextEditor
 				}
 				for (var i:int = 0; i < (event.result).length; i++)	{
 					if (Robj[i] == null){
-						trace(lang("WARNING! R Service returned null in results array at index ")+i);
+						trace("WARNING! R Service returned null in results array at index "+i);
 						continue;
 					}
 					var rResult:RResult = new RResult(Robj[i]);

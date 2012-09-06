@@ -292,7 +292,7 @@
 			
 			private function handleRunScriptFault(event:FaultEvent, token:Object = null):void
 			{
-				trace(lang("fault on ")+token, event.message);
+				trace("fault on "+token, event.message);
 			}
 			
 			
