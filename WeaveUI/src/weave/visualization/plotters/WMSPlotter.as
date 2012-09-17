@@ -1,20 +1,20 @@
 /*
-    Weave (Web-based Analysis and Visualization Environment)
-    Copyright (C) 2008-2011 University of Massachusetts Lowell
+	Weave (Web-based Analysis and Visualization Environment)
+	Copyright (C) 2008-2011 University of Massachusetts Lowell
 
-    This file is a part of Weave.
+	This file is a part of Weave.
 
-    Weave is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, Version 3,
-    as published by the Free Software Foundation.
+	Weave is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License, Version 3,
+	as published by the Free Software Foundation.
 
-    Weave is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	Weave is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Weave.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with Weave.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package weave.visualization.plotters
@@ -29,9 +29,9 @@ package weave.visualization.plotters
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.utils.Dictionary;
-	
+
 	import org.openscales.proj4as.ProjConstants;
-	
+
 	import weave.api.WeaveAPI;
 	import weave.api.core.ILinkableObjectWithBusyStatus;
 	import weave.api.data.IProjectionManager;
@@ -53,7 +53,7 @@ package weave.visualization.plotters
 
 	/**
 	 * WMSPlotter
-	 *  
+	 *
 	 * @author adufilie
 	 * @author kmonico
 	 * @author skolman
@@ -61,7 +61,7 @@ package weave.visualization.plotters
 	public class WMSPlotter extends AbstractPlotter implements ILinkableObjectWithBusyStatus
 	{
 		// TODO: move the image reprojection code elsewhere
-		
+
 		public function WMSPlotter()
 		{
 			_textField.autoSize = "left";			
@@ -79,19 +79,19 @@ package weave.visualization.plotters
 		public const srs:LinkableString = newSpatialProperty(LinkableString); // needed for linking MapTool settings
 		public const styles:LinkableString = newLinkableChild(this, LinkableString, setStyle); // needed for changing seasons
 		public const displayMissingImage:LinkableBoolean = newLinkableChild(this, LinkableBoolean);
-		
+
 		// reusable objects
 		private const _tempMatrix:Matrix = new Matrix(); 
 		private const _tempDataBounds:IBounds2D = new Bounds2D();
 		private const _tempScreenBounds:IBounds2D = new Bounds2D();
 		private const _clipRectangle:Rectangle = new Rectangle();
-		
+
 		// used to show a missing image
 		[Embed(source="/weave/resources/images/missing.png")]
 		private static var _missingImageClass:Class;
 		private static const _missingImage:Bitmap = Bitmap(new _missingImageClass());
 		private static const _missingImageColorTransform:ColorTransform = new ColorTransform(1, 1, 1, 0.25);
-		
+
 		// reprojecting bitmaps 
 		public const gridSpacing:LinkableNumber = registerSpatialProperty(new LinkableNumber(12)); // number of pixels between grid points
 		private const _tempBounds:IBounds2D = new Bounds2D();
@@ -102,14 +102,14 @@ package weave.visualization.plotters
 		private const _tempReprojPoint:Point = new Point(); // reusable object for reprojections
 		private const projManager:IProjectionManager = WeaveAPI.ProjectionManager; // reprojecting tiles
 		private const _tileSRSToShapeCache:Dictionary2D = new Dictionary2D(true, true); // use WeakReferences to be GC friendly
-		
+
 		private function getDestinationSRS():String
 		{
 			if (projManager.projectionExists(srs.value))
 				return srs.value;
 			return _service.getProjectionSRS();
 		}
-		
+
 		// reusable objects in getShape()
 		private const vertices:Vector.<Number> = new Vector.<Number>();
 		private const indices:Vector.<int> = new Vector.<int>();
@@ -120,17 +120,17 @@ package weave.visualization.plotters
 			var cachedValue:ProjectedShape = _tileSRSToShapeCache.get(tile, getDestinationSRS());
 			if (cachedValue != null)
 				return cachedValue;
-			
+
 			// we need to create the cached shape
 			var reprojectedDataBounds:IBounds2D = new Bounds2D();
 			vertices.length = 0;
 			indices.length = 0;
 			uvtData.length = 0;
-						
+
 			// get projector for optimized reprojection
 			var serviceSRS:String = _service.getProjectionSRS();
 			var projector:IProjector = projManager.getProjector(serviceSRS, srs.value);
-			
+
 			// Make lower-left corner of image 0,0 normalized coordinates by making this height negative.
 			// To eliminate the seams between images, adjust grid bounds so edge
 			// coordinates 0 and 1 will get projected to slightly outside tile.bounds.
@@ -140,7 +140,7 @@ package weave.visualization.plotters
 				.5,
 				(tile.imageWidth - overlap) / (tile.imageWidth),
 				- (tile.imageHeight - overlap) / (tile.imageHeight)
-			);
+				);
 
 			var fences:int = Math.max(tile.imageWidth, tile.imageHeight) / gridSpacing.value; // number of spaces in the grid x or y direction
 			var fencePosts:int = fences + 1; // number of vertices in the grid
@@ -154,10 +154,10 @@ package weave.visualization.plotters
 					// percent bounds of where we are in the image space
 					_tempReprojPoint.x = xNorm;
 					_tempReprojPoint.y = yNorm;
-					
+
 					// project normalized grid coords to tile data coords
 					_normalizedGridBounds.projectPointTo(_tempReprojPoint, tile.bounds);
-					
+
 					// reproject the point before pushing it as a vertex
 					_allowedTileReprojBounds.constrainPoint(_tempReprojPoint);
 					projector.reproject(_tempReprojPoint);
@@ -173,11 +173,11 @@ package weave.visualization.plotters
 					uvtData.push(
 						(xNorm * tile.imageWidth - offset) / (tile.imageWidth - offset * 2),
 						(yNorm * tile.imageHeight - offset) / (tile.imageHeight - offset * 2)
-					);
-					
+						);
+
 					if (iy == 0 || ix == 0) 
 						continue; 
-					
+
 					// save indices for two triangles -- we are currently at fence post D in this diagram:
 					// A---B
 					// | / |
@@ -190,7 +190,7 @@ package weave.visualization.plotters
 					indices.push(c,b,d);
 				}
 			}
-			
+
 			// draw the triangles and end the fill
 			var newShape:Shape = new Shape();
 			//newShape.graphics.lineStyle(1, 0xFFFFFF, 0.5, false, LineScaleMode.NONE);
@@ -198,7 +198,7 @@ package weave.visualization.plotters
 			newShape.graphics.beginBitmapFill(tile.bitmapData, null, false, true); // it's important to disable the repeat option
 			newShape.graphics.drawTriangles(vertices, indices, uvtData, TriangleCulling.NEGATIVE);
 			newShape.graphics.endFill();
-			
+
 			// save the shape and bounds into the token object and put in cache
 			var projShape:ProjectedShape = new ProjectedShape();
 			projShape.shape = newShape;
@@ -209,7 +209,7 @@ package weave.visualization.plotters
 
 			return projShape;
 		}
-		
+
 		override public function drawBackground(dataBounds:IBounds2D, screenBounds:IBounds2D, destination:BitmapData):void
 		{
 			// if there is no service to use, we can't draw anything
@@ -224,9 +224,9 @@ package weave.visualization.plotters
 				drawUnProjectedTiles(dataBounds, screenBounds, destination);
 				return;
 			}
-			
+
 			//// THERE IS A PROJECTION
-			
+
 			var bgDataBounds:IBounds2D = getBackgroundDataBounds(); // temp solution, slightly inefficient
 
 			_tempDataBounds.copyFrom(dataBounds);
@@ -238,18 +238,18 @@ package weave.visualization.plotters
 				// make sure _tempDataBounds is within the valid range
 				bgDataBounds.constrainBounds(_tempDataBounds, false);
 				_tempDataBounds.centeredResize(_tempDataBounds.getWidth() - ProjConstants.EPSLN, _tempDataBounds.getHeight() - ProjConstants.EPSLN);
-				
+
 				// calculate screen bounds that corresponds to _tempDataBounds
 				_tempScreenBounds.copyFrom(_tempDataBounds);
 				dataBounds.projectCoordsTo(_tempScreenBounds, screenBounds);
-			
+
 				// transform the bounds--this hurts performance!
 				projManager.transformBounds(srs.value, serviceSRS, _tempDataBounds);
 			}
 
 			// expand the data bounds so some surrounding tiles are downloaded to improve panning
 			var allTiles:Array = _service.requestImages(_tempDataBounds, _tempScreenBounds, preferLowerQuality.value);
-			
+
 			dataBounds.transformMatrix(screenBounds, _tempMatrix, true);
 
 			// draw each tile's reprojected shape
@@ -267,7 +267,7 @@ package weave.visualization.plotters
 				var projShape:ProjectedShape = getShape(tile);
 				if (!projShape.bounds.overlaps(dataBounds))
 					continue; // don't draw off-screen bitmaps
-				
+
 				var colorTransform:ColorTransform = (tile.bitmapData == _missingImage.bitmapData ? _missingImageColorTransform : null);
 				destination.draw(projShape.shape, _tempMatrix, colorTransform, null, null, preferLowerQuality.value && !colorTransform);				
 			}
@@ -283,26 +283,26 @@ package weave.visualization.plotters
 				return;
 
 			var allTiles:Array = _service.requestImages(dataBounds, screenBounds, preferLowerQuality.value);
-				
+
 			for (var i:int = 0; i < allTiles.length; i++)
 			{
 				var tile:WMSTile = allTiles[i];
 				// above we requested some tiles outside the dataBounds... we don't want to draw them
 				if (!tile.bounds.overlaps(dataBounds, false))
 					continue;
-				
+
 				// if there is no bitmap data, decide whether to continue or display missing image
 				if (tile.bitmapData == null)
 				{
 					if (displayMissingImage.value == false)
 						continue;
-					
+
 					tile.bitmapData = _missingImage.bitmapData;
 				}
-				
+
 				var imageBounds:IBounds2D = tile.bounds;
 				var imageBitmap:BitmapData = tile.bitmapData;
-				
+
 				// get screen coords from image data coords
 				_tempBounds.copyFrom(imageBounds); // data
 				dataBounds.projectCoordsTo(_tempBounds, screenBounds); // data to screen
@@ -313,11 +313,11 @@ package weave.visualization.plotters
 				_tempMatrix.scale(
 					Math.ceil(_tempBounds.getWidth()) / imageBitmap.width,
 					Math.ceil(_tempBounds.getHeight()) / imageBitmap.height
-				);
+					);
 				_tempMatrix.translate(
 					Math.round(_tempBounds.getXMin()),
 					Math.round(_tempBounds.getYMin())
-				);
+					);
 
 				// calculate clip rectangle for nasa service because tiles go outside the lat/long bounds
 				_tempBounds.copyFrom(_service.getAllowedBounds()); // data
@@ -327,13 +327,13 @@ package weave.visualization.plotters
 				_clipRectangle.y = Math.floor(_clipRectangle.y);
 				_clipRectangle.width = Math.floor(_clipRectangle.width - 0.5);
 				_clipRectangle.height = Math.floor(_clipRectangle.height - 0.5);
-				
+
 				var colorTransform:ColorTransform = (imageBitmap == _missingImage.bitmapData ? _missingImageColorTransform : null);
 				destination.draw(imageBitmap, _tempMatrix, colorTransform, null, _clipRectangle, preferLowerQuality.value && !colorTransform);				
 			}
 			drawCreditText(destination);
 		}
-		
+
 		private var _providerCredit:String = '';
 		private const _textField:TextField = new TextField(); // reusable object
 		private function drawCreditText(destination:BitmapData):void
@@ -350,12 +350,12 @@ package weave.visualization.plotters
 		private function setProvider():void
 		{
 			var provider:String = serviceName.value;
-			
+
 			if (_service != null)
 			{
 				disposeObjects(_service);
 			}
-			
+
 			if (provider == WMSProviders.NASA)
 			{
 				_service = newSpatialProperty(OnEarthProvider);
@@ -365,15 +365,15 @@ package weave.visualization.plotters
 				_service = newSpatialProperty(ModestMapsWMS);
 				_service.setProvider(provider);
 			}
-			
+
 			_providerCredit = _service.getCreditInfo();
-			
+
 			// determine maximum bounds for reprojecting images
 			_allowedTileReprojBounds.copyFrom(_latLonBounds);
 			projManager.transformBounds("EPSG:4326", WMSProviders.getSRS(provider), _allowedTileReprojBounds);
 			spatialCallbacks.triggerCallbacks();
 		}
-		
+
 		override public function getBackgroundDataBounds():IBounds2D
 		{
 			var bounds:IBounds2D = getReusableBounds();
@@ -381,7 +381,7 @@ package weave.visualization.plotters
 			{
 				// determine bounds of plotter
 				bounds.copyFrom(_service.getAllowedBounds());
-				
+
 				var serviceSRS:String = _service.getProjectionSRS();
 				if (serviceSRS != srs.value
 					&& projManager.projectionExists(srs.value)
@@ -390,15 +390,15 @@ package weave.visualization.plotters
 					projManager.transformBounds(_service.getProjectionSRS(), srs.value, bounds);
 				}
 			}
-			
+
 			return bounds;
 		}
-		
+
 		override public function dispose():void
 		{
 			if (_service != null)
 				_service.cancelPendingRequests(); // cancel everything to prevent any callbacks from running
-			
+
 			super.dispose();
 		}
 
@@ -409,21 +409,21 @@ package weave.visualization.plotters
 		{
 			var nasaService:OnEarthProvider = _service as OnEarthProvider;
 			var style:String = styles.value;
-			
+
 			if (nasaService == null)
 				return;
-			
+
 			nasaService.changeStyleToMonth(style);
 		}
-		
+
 		private function verifyServiceName(s:String):Boolean
 		{
 			if (s == null || s == '')
 				return false;
-			
+
 			return WMSProviders.providers.indexOf(s) >= 0;
 		}
-		
+
 		public function isBusy():Boolean
 		{
 			return false;
@@ -443,4 +443,5 @@ internal class ProjectedShape
 	public var imageWidth:int;
 	public var imageHeight:int;	
 }
->>>>>>> refs/remotes/upstream/master
+
+

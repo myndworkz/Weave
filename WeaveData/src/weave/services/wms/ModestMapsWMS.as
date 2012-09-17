@@ -46,7 +46,9 @@ package weave.services.wms
 	import org.openscales.proj4as.proj.ProjMerc;
 
 	import weave.api.WeaveAPI;
+	import weave.api.getCallbackCollection;
 	import weave.api.primitives.IBounds2D;
+	import weave.api.registerLinkableChild;
 	import weave.api.reportError;
 	import weave.api.services.IWMSService;
 	import weave.core.ErrorManager;
@@ -116,7 +118,7 @@ package weave.services.wms
 			_imageWidth = _mapProvider.tileWidth;
 			_imageHeight = _mapProvider.tileHeight;
 			_currentTileIndex = new WMSTileIndex();
-			triggerCallbacks();
+			getCallbackCollection(this).triggerCallbacks();
 		}
 
 		public function get provider():IMapProvider
@@ -226,7 +228,7 @@ package weave.services.wms
 
 					var urlRequest:URLRequest = new URLRequest(requestString);
 					// note that thisTileMercator is still in Mercator coords
-					var newTile:WMSTile = new WMSTile(thisTileMercator, _imageWidth, _imageHeight, urlRequest);
+					var newTile:WMSTile = registerLinkableChild(this, new WMSTile(thisTileMercator, _imageWidth, _imageHeight, urlRequest));
 					newTile.zoomLevel = _tempCoord.zoom; // need to manually set it so tileIndex queries work
 					_urlToTile[requestString] = newTile;
 					_pendingTiles.push(newTile);
@@ -234,8 +236,7 @@ package weave.services.wms
 				}
 			}
 
-			//lowerQualTiles = lowerQualTiles.concat(completedTiles);
-			lowerQualTiles = completedTiles;
+			lowerQualTiles = lowerQualTiles.concat(completedTiles);
 			lowerQualTiles = lowerQualTiles.sort(tileSortingComparison);
 			return lowerQualTiles;
 		}
@@ -295,10 +296,10 @@ package weave.services.wms
 			// not all providers allow the same zoom range
 			if (_mapProvider is BlueMarbleMapProvider)
 				maxZoom = 9;
-			else if (_mapProvider is OpenStreetMapProvider || _mapProvider is StamenProvider)
+			else if (_mapProvider is OpenStreetMapProvider || _mapProvider is StamenProvider || _mapProvider is MichiganStreetsProvider)
 				maxZoom = 18;
 			else if (_mapProvider is MicrosoftProvider)
-				maxZoom = 25;
+				maxZoom = 20;
 			else if (_mapProvider is YahooAerialMapProvider)
 				maxZoom = 20;
 			else if (_mapProvider is YahooRoadMapProvider)
@@ -309,14 +310,10 @@ package weave.services.wms
 				maxZoom = 20;
 			else if (_mapProvider is OpenMapQuestProvider)
 				maxZoom = 15;
-			else if (_mapProvider is MichiganStreetsProvider)
-				maxZoom = 25;
 			else if (_mapProvider is OpenMapQuestAerialProvider)
 				maxZoom = 7;
 
-			if (_mapProvider is MichiganStreetsProvider){
-				//Do what makes the error stop
-			}
+
 			// very few providers have a zoom of 0, so the loop starts at 1 to prevent enforcement later
 			for (var i:int = 1; i <= maxZoom; ++i) // 20 is max provided in ModestMaps Library
 			{
@@ -487,4 +484,5 @@ package weave.services.wms
 		}
 	}
 }
+
 
