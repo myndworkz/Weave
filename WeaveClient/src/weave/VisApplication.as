@@ -107,7 +107,6 @@ package weave
 	import weave.utils.DebugTimer;
 	import weave.utils.EditorManager;
 	import weave.utils.VectorUtils;
-	import weave.visualization.layers.SelectablePlotLayer;
 	import weave.visualization.plotters.GeometryPlotter;
 	import weave.visualization.tools.MapTool;
 
@@ -391,7 +390,7 @@ package weave
 		private var _usingDeprecatedFlashVar:Boolean = false;
 		private const DEPRECATED_FLASH_VAR_MESSAGE:String = lang("The 'defaults=' URL parameter is deprecated.  Use 'file=' instead.");
 
-		private var _selectionIndicatorText:Text = new Text;
+		private var _selectionIndicatorText:Text = new Text();
 		private var selectionKeySet:KeySet = Weave.root.getObject(Weave.DEFAULT_SELECTION_KEYSET) as KeySet;
 		private function handleSelectionChange():void
 		{
@@ -408,6 +407,15 @@ package weave
 				{
 					if (visDesktop != _selectionIndicatorText.parent)
 						visDesktop.addChild(_selectionIndicatorText);
+						
+					if( Weave.properties.recordsTooltipLocation.value == WeaveProperties.RECORDS_TOOLTIP_LOWER_LEFT ){
+						_selectionIndicatorText.setStyle( "left", 0 ) ;
+						_selectionIndicatorText.setStyle( "right", null ) ;
+					}
+					else if( Weave.properties.recordsTooltipLocation.value == WeaveProperties.RECORDS_TOOLTIP_LOWER_RIGHT ){
+						_selectionIndicatorText.setStyle( "right", 0 ) ;
+						_selectionIndicatorText.setStyle( "left", null ) ;
+					}	
 				}
 				else
 				{
@@ -440,10 +448,12 @@ package weave
 			// Code for selection indicator
 			getCallbackCollection(selectionKeySet).addGroupedCallback(this, handleSelectionChange, true);
 			Weave.properties.showSelectedRecordsText.addGroupedCallback(this, handleSelectionChange, true);
+			Weave.properties.recordsTooltipLocation.addGroupedCallback(this, handleSelectionChange, true);
+			
 			_selectionIndicatorText.setStyle("color", 0xFFFFFF);
 			_selectionIndicatorText.opaqueBackground = 0x000000;
 			_selectionIndicatorText.setStyle("bottom", 0);
-			_selectionIndicatorText.setStyle("right", 0);
+			_selectionIndicatorText.setStyle("left", 0);
 			
 			PopUpManager.createPopUp(this, WeaveProgressBar);
 
@@ -1009,9 +1019,12 @@ package weave
 			if (object is MapTool)
 			{
 				//(object as MapTool).toggleControlPanel();
-				var layer:SelectablePlotLayer = (object as MapTool).visualization.layers.getObjects()[0] as SelectablePlotLayer;
-				var geom:DynamicColumn = (layer.getDynamicPlotter().internalObject as GeometryPlotter).geometryColumn.internalDynamicColumn;
-				AttributeSelectorPanel.openDefaultSelector(geom, lang("Geometry"));
+				var plotters:Array = (object as MapTool).visualization.plotManager.plotters.getObjects(GeometryPlotter);
+				if (plotters.length)
+				{
+					var geom:DynamicColumn = (plotters[0] as GeometryPlotter).geometryColumn.internalDynamicColumn;
+					AttributeSelectorPanel.openDefaultSelector(geom, lang("Geometry"));
+				}
 			}
 
 			return object;
@@ -1345,9 +1358,6 @@ package weave
 				
 				if (Weave.properties.enablePenTool.value)
 					PenTool.createContextMenuItems(this);
-					
-				if (Weave.properties.dataInfoURL.value)
-					addLinkContextMenuItem(lang("Show Information About This Dataset..."), Weave.properties.dataInfoURL.value);
 				
 				if (Weave.properties.enableExportToolImage.value)
 				{
@@ -1387,6 +1397,9 @@ package weave
 				// Add context menu items for handling search queries
 				if (Weave.properties.enableSearchForRecord.value)
 					SearchEngineUtils.createContextMenuItems(this);
+				
+				if (Weave.properties.dataInfoURL.value)
+					addLinkContextMenuItem(lang("Show Information About This Dataset..."), Weave.properties.dataInfoURL.value);
 			}
 		}
 
@@ -1528,7 +1541,7 @@ package weave
 			CustomContextMenuManager.createAndAddMenuItemToDestination(text, 
 															  this, 
                                                               function(e:Event):void { navigateToURL(new URLRequest(url), "_blank"); },
-                                                              "linkMenuItems");	
+                                                              "4 linkMenuItems");	
 		}
 
 		/**

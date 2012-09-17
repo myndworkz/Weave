@@ -51,6 +51,8 @@ package weave.utils
 	 */
 	public class SpatialIndex extends CallbackCollection implements ISpatialIndex
 	{
+		private function debugTrace(..._):void { } // comment this line to enable debugging
+		
 		public function SpatialIndex()
 		{
 		}
@@ -61,12 +63,12 @@ package weave.utils
 		private var _keyToBoundsMap:Dictionary = new Dictionary(); // IQualifiedKey -> Array of IBounds2D
 		private var _keyToGeometriesMap:Dictionary = new Dictionary(); // IQualifiedKey -> Array of GeneralizedGeometry or ISimpleGeometry
 		
-		private var _queryMissingBounds:Boolean; // used by _insertNext
-		private var _keysArrayIndex:int; // used by _insertNext
-		private var _keysIndex:int; // used by _insertNext
-		private var _plotter:IPlotter;//used by _insertNext
-		private var _boundsArrayIndex:int; // used by _insertNext
-		private var _boundsArray:Array; // used by _insertNext
+		private var _queryMissingBounds:Boolean; // used by async code
+		private var _keysArrayIndex:int; // used by async code
+		private var _keysIndex:int; // used by async code
+		private var _plotter:IPlotter;//used by async code
+		private var _boundsArrayIndex:int; // used by async code
+		private var _boundsArray:Array; // used by async code
 		
 		/**
 		 * These constants define indices in a KDKey corresponding to xmin,ymin,xmax,ymax,importance values.
@@ -83,7 +85,6 @@ package weave.utils
 		private const maxKDKey:Array = [NaN, NaN, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
 		
 		// reusable temporary objects
-		private const _tempBounds:IBounds2D = new Bounds2D();
 		private const _tempBoundsPolygon:Array = [new Point(), new Point(), new Point(), new Point(), new Point()]; // used by setTempBounds and getKeysGeometryOverlap
 
 		/**
@@ -129,27 +130,27 @@ package weave.utils
 		 */
 		public function createIndex(plotter:IPlotter, queryMissingBounds:Boolean = false):void
 		{
+			debugTrace(plotter,this,'createIndex');
+			
 			_queryMissingBounds = queryMissingBounds;
 			
 			var key:IQualifiedKey;
 			var bounds:IBounds2D;
 			var i:int;
 			
-			if (plotter is DynamicPlotter)
-			{
-				if ((plotter as DynamicPlotter).internalObject is IPlotterWithGeometries)
-					_keyToGeometriesMap = new Dictionary();
-				else 
-					_keyToGeometriesMap = null;
-			}
+			while (plotter is DynamicPlotter)
+				plotter = (plotter as DynamicPlotter).internalObject as IPlotter;
 			
-			_tempBounds.copyFrom(collectiveBounds);
+			if (plotter is IPlotterWithGeometries)
+				_keyToGeometriesMap = new Dictionary();
+			else 
+				_keyToGeometriesMap = null;
 			
 			_keysArray.length = 0; // hack to prevent callbacks
 			clear();
 			_plotter = plotter;
 
-			if (plotter != null)
+			if (plotter)
 			{
 				collectiveBounds.copyFrom(plotter.getBackgroundDataBounds());
 				
@@ -164,6 +165,7 @@ package weave.utils
 				// KDTree structure due to the given ordering of the records
 				VectorUtils.randomSort(_keysArray);
 			}
+			debugTrace(_plotter,this,'keys',_keysArray.length);
 			
 			// insert bounds-to-key mappings in the kdtree
 			_prevTriggerCounter = triggerCounter; // used to detect change during iterations
@@ -183,13 +185,16 @@ package weave.utils
 			
 			if (_keyToGeometriesMap != null)
 			{
-				var geoms:Array = ((_plotter as DynamicPlotter).internalObject as IPlotterWithGeometries).getGeometriesFromRecordKey(key);
+				var geoms:Array = (_plotter as IPlotterWithGeometries).getGeometriesFromRecordKey(key);
 				_keyToGeometriesMap[key] = geoms;
 			}
 			
 			// stop if callbacks were triggered since the iterations started
 			if (triggerCounter != _prevTriggerCounter)
+			{
+				debugTrace(_plotter,this,'trigger counter changed');
 				return 0;
+			}
 			
 			_keysIndex++;
 			
@@ -240,6 +245,7 @@ package weave.utils
 		public function clear():void
 		{
 			delayCallbacks();
+			debugTrace(_plotter,this,'clear');
 			
 			if (_keysArray.length > 0)
 				triggerCallbacks();
@@ -350,7 +356,7 @@ package weave.utils
 			var keys:Array = getKeysBoundingBoxOverlap(queryBounds, filterBoundingBoxesByImportance ? minImportance : 0);
 			
 			// if this index isn't for an IPlotterWithGeometries OR the user wants legacy probing
-			if (_keyToGeometriesMap == null || !Weave.properties.shouldEnableGeometryProbing())
+			if (_keyToGeometriesMap == null || !Weave.properties.enableGeometryProbing.value)
 				return keys;
 			
 			// if there are 0 keys
@@ -504,7 +510,7 @@ package weave.utils
 				var key:IQualifiedKey = keys[iKey];
 				var overlapsQueryCenter:Boolean = false;
 				var geoms:Array = null;
-				if (_keyToGeometriesMap && Weave.properties.shouldEnableGeometryProbing())
+				if (_keyToGeometriesMap && Weave.properties.enableGeometryProbing.value)
 					geoms = _keyToGeometriesMap[key] as Array; // may be null if async task hasn't completed
 				
 				if (geoms) // the plotter is an IPlotterWithGeometries and the user wants geometry probing
@@ -718,7 +724,7 @@ package weave.utils
 			var queryGeomVertices:Array = geometry.getVertices();
 			var keys:Array = getKeysBoundingBoxOverlap((geometry as SimpleGeometry).bounds, filterBoundingBoxesByImportance ? minImportance : 0);
 			
-			if (_keyToGeometriesMap == null || !Weave.properties.shouldEnableGeometryProbing())
+			if (_keyToGeometriesMap == null || !Weave.properties.enableGeometryProbing.value)
 				return keys;
 			
 			var result:Array = [];

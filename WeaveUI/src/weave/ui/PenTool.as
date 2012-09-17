@@ -27,14 +27,13 @@ package weave.ui
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.utils.Dictionary;
-	
-	import mx.core.Application;
+
 	import mx.core.UIComponent;
 	import mx.core.mx_internal;
 	import mx.events.FlexEvent;
 	import mx.events.ResizeEvent;
 	import mx.managers.CursorManagerPriority;
-	
+
 	import weave.api.WeaveAPI;
 	import weave.api.core.IDisposableObject;
 	import weave.api.core.ILinkableContainer;
@@ -49,15 +48,14 @@ package weave.ui
 	import weave.primitives.SimpleGeometry;
 	import weave.utils.CustomCursorManager;
 	import weave.utils.SpatialIndex;
-	import weave.visualization.layers.PlotLayerContainer;
-	import weave.visualization.layers.SelectablePlotLayer;
+	import weave.visualization.layers.Visualization;
 	import weave.visualization.tools.SimpleVisTool;
 
 	use namespace mx_internal;
-	
+
 	/**
 	 * This is a class that controls the graphical annotations within Weave.
-	 * 
+	 *
 	 * @author jfallon
 	 * @author adufilie
 	 * @author kmonico
@@ -69,7 +67,7 @@ package weave.ui
 		{
 			percentWidth = 100;
 			percentHeight = 100;
-			
+
 			// add local event listeners for rollOver/rollOut for changing the cursor
 			addEventListener(MouseEvent.MOUSE_OVER, handleRollOver);
 			addEventListener(MouseEvent.MOUSE_OUT, handleRollOut);
@@ -81,11 +79,11 @@ package weave.ui
 			// enable the double click event
 			doubleClickEnabled = true;
 			addEventListener(MouseEvent.DOUBLE_CLICK, handleDoubleClick);
-			
+
 			// add global event listener for mouse move and mouse up because user may move or release outside this display object
 			WeaveAPI.StageUtils.addEventCallback(MouseEvent.MOUSE_MOVE, this, handleMouseMove);
 			WeaveAPI.StageUtils.addEventCallback(MouseEvent.MOUSE_UP, this, handleMouseUp);
- 
+
 			setupMask();
 		}
 
@@ -99,7 +97,7 @@ package weave.ui
 			var handleResize:Function = function (event:ResizeEvent):void
 			{
 				var penTool:PenTool = event.target as PenTool;
-				
+
 				// clear the mask graphics
 				_maskObject.graphics.clear();
 
@@ -108,26 +106,26 @@ package weave.ui
 				_maskObject.height = parent.height;
 				_maskObject.invalidateSize();
 				_maskObject.validateNow();
-				
+
 				// and draw the invisible rectangle (invisible because mask.visible = false)
 				_maskObject.graphics.beginFill(0xFFFFFF, 1);
 				_maskObject.graphics.drawRect(0, 0, parent.width, parent.height);
 				_maskObject.graphics.endFill();
 			}
 			addEventListener(ResizeEvent.RESIZE, handleResize);
-			
+
 			_maskObject.visible = false;
 			mask = _maskObject;
 			addChild(_maskObject);
-			
+
 			_maskObject.percentWidth = 100;
 			_maskObject.percentHeight = 100;
 		}
-		
+
 		private function handleCreationComplete(event:FlexEvent):void
 		{
 			// when the visualization changes, the dataBounds may have changed
-			var visualization:PlotLayerContainer = getPlotLayerContainer(parent);
+			var visualization:Visualization = getVisualization(parent);
 			if (visualization)
 			{
 				var handleContainerChange:Function = function ():void
@@ -137,70 +135,70 @@ package weave.ui
 
 				getCallbackCollection(visualization).addGroupedCallback(this, handleContainerChange);
 			}
-			
+
 			drawingMode.addGroupedCallback(this, removeAllDrawings);
 		}
 
 		/**
-		 * Remove all the drawings and set the pentool to currently not drawing. 
+		 * Remove all the drawings and set the pentool to currently not drawing.
 		 */		
 		public function removeAllDrawings():void
 		{
 			_drawing = false;
 			coords.value = "";
 		}
-		
+
 		public function dispose():void
 		{
 			editMode = false; // public setter cleans up event listeners and cursor
 		}
-		
+
 		private const _maskObject:UIComponent = new UIComponent();
 		private var _editMode:Boolean = false; // true when editing
 		private var _drawing:Boolean = false; // true when editing and mouse is down
 		private var _coordsArrays:Array = []; // parsed from coords LinkableString
-		
+
 		/**
 		 * The current mode of the drawing.
-		 * @default FREE_DRAW_MODE 
+		 * @default FREE_DRAW_MODE
 		 */		
 		public const drawingMode:LinkableString = registerLinkableChild(this, new LinkableString(FREE_DRAW_MODE, verifyDrawingMode));
-		
+
 		/**
 		 * This is used for sessioning all of the coordinates.
 		 */
 		public const coords:LinkableString = registerLinkableChild(this, new LinkableString(''), handleCoordsChange);
-		
+
 		/**
 		 * The width of the line.
 		 * @default 2
 		 */
 		public const lineWidth:LinkableNumber = registerLinkableChild(this, new LinkableNumber(2), invalidateDisplayList);
-		
+
 		/**
 		 * The color of the line.
 		 * @default 0x0
 		 */
 		public const lineColor:LinkableNumber = registerLinkableChild(this, new LinkableNumber(0x0), invalidateDisplayList);
-		
+
 		/**
 		 * The alpha of the line.
-		 * @default 1 
+		 * @default 1
 		 */		
 		public const lineAlpha:LinkableNumber = registerLinkableChild(this, new LinkableNumber(1, verifyAlpha), invalidateDisplayList);
-		
+
 		/**
 		 * The fill color of the polygon drawn in POLYGON_DRAW_MODE.
-		 * @default 0x000000 
+		 * @default 0x000000
 		 */		
 		public const polygonFillColor:LinkableNumber = registerLinkableChild(this, new LinkableNumber(0x000000), invalidateDisplayList);
-		
+
 		/**
 		 * The fill alpha of the polygon drawn in POLYGON_DRAW_MODE.
-		 * @default 1 
+		 * @default 1
 		 */		
 		public const polygonFillAlpha:LinkableNumber = registerLinkableChild(this, new LinkableNumber(0, verifyAlpha), invalidateDisplayList);
-		
+
 		/**
 		 * Verification function for the alpha properties.
 		 */		
@@ -226,9 +224,9 @@ package weave.ui
 		{
 			if (_editMode == value)
 				return;
-			
+
 			_editMode = value;
-			
+
 			_drawing = false;
 			if (value)
 				CustomCursorManager.showCursor(CustomCursorManager.PEN_CURSOR, CursorManagerPriority.HIGH, -3, -22);
@@ -238,27 +236,27 @@ package weave.ui
 		}
 
 		/**
-		 * Handle a screen coordinate and project it into the data bounds of the parent visualization. 
+		 * Handle a screen coordinate and project it into the data bounds of the parent visualization.
 		 * @param x The x value in screen coordinates.
 		 * @param y The y value in screen coordinates.
 		 * @param output The point to store the data projected point.
 		 */		
 		private function handleScreenCoordinate(x:Number, y:Number, output:Point):void
 		{
-			var visualization:PlotLayerContainer = getPlotLayerContainer(parent);
+			var visualization:Visualization = getVisualization(parent);
 			if (visualization)
 			{
-				visualization.zoomBounds.getScreenBounds(_tempScreenBounds);				
-				visualization.zoomBounds.getDataBounds(_tempDataBounds);
-				
+				visualization.plotManager.zoomBounds.getScreenBounds(_tempScreenBounds);
+				visualization.plotManager.zoomBounds.getDataBounds(_tempDataBounds);
+
 				output.x = x;
 				output.y = y;
 				_tempScreenBounds.projectPointTo(output, _tempDataBounds);					
 			}
 		}
-		
+
 		/**
-		 * Handle a data coordinate and project it into the screen bounds of the parent visualization. 
+		 * Handle a data coordinate and project it into the screen bounds of the parent visualization.
 		 * @param x1 The x value in data coordiantes.
 		 * @param y1 The y value in data coordinates.
 		 * @param output The point to store the screen projected point.
@@ -266,28 +264,28 @@ package weave.ui
 		private function projectCoordToScreenBounds(x1:Number, y1:Number, output:Point):void
 		{
 			var linkableContainer:ILinkableContainer = getLinkableContainer(parent);
-			var visualization:PlotLayerContainer = (linkableContainer as SimpleVisTool).visualization as PlotLayerContainer;
+			var visualization:Visualization = (linkableContainer as SimpleVisTool).visualization as Visualization;
 			if (visualization)
 			{
-				visualization.zoomBounds.getScreenBounds(_tempScreenBounds);				
-				visualization.zoomBounds.getDataBounds(_tempDataBounds);
-				
+				visualization.plotManager.zoomBounds.getScreenBounds(_tempScreenBounds);
+				visualization.plotManager.zoomBounds.getDataBounds(_tempDataBounds);
+
 				// project the point to screen bounds
 				output.x = x1;
 				output.y = y1;
 				_tempDataBounds.projectPointTo(output, _tempScreenBounds);
-				
+
 				// get the rounded values
 				var x2:Number = Math.round(output.x);
 				var y2:Number = Math.round(output.y);
-				
+
 				output.x = x2;
 				output.y = y2;
 			}
 		}
 
 		/**
-		 * This is the callback of <code>coords</code> 
+		 * This is the callback of <code>coords</code>
 		 */		
 		private function handleCoordsChange():void
 		{
@@ -307,10 +305,10 @@ package weave.ui
 
 			if (!_editMode)// || mouseOffscreen())
 				return;
-			
+
 			// project the point to data coordinates
 			handleScreenCoordinate(mouseX, mouseY, _tempPoint);
-			
+
 			if (drawingMode.value == FREE_DRAW_MODE)
 			{
 				// begin a new line and save the point. Note that _drawing is true
@@ -325,7 +323,7 @@ package weave.ui
 				{
 					// continue last line
 					coords.value += _tempPoint.x + "," + _tempPoint.y + ",";
-					
+
 					line = _coordsArrays[_coordsArrays.length - 1];
 					line.push(_tempPoint.x, _tempPoint.y);
 				}
@@ -339,22 +337,19 @@ package weave.ui
 					_drawing = true;
 
 					coords.value += '\n' + _tempPoint.x + "," + _tempPoint.y + ",";
-					
-					// CSTEF - 4-16-12 - replace \n with :
-					//coords.value += ':' + _tempPoint.x + "," + _tempPoint.y + ",";
-				
+
 					line = [];
 					line.push(_tempPoint.x, _tempPoint.y);
 					_coordsArrays.push(line);
 				}
 			}
-			
+
 			// redraw
 			invalidateDisplayList();
 		}
-		
+
 		/**
-		 * Handle a double click event which is used for ending the polygon drawing. 
+		 * Handle a double click event which is used for ending the polygon drawing.
 		 * @param event The mouse event.
 		 */		
 		private function handleDoubleClick(event:MouseEvent):void
@@ -370,13 +365,13 @@ package weave.ui
 				_drawing = false;
 			}
 		}
-		
+
 		/**
-		 * Handle the mouse release event. 
+		 * Handle the mouse release event.
 		 */		
 		private function handleMouseUp():void
 		{
-			
+
 			if (!_editMode)// || mouseOffscreen())
 				return;
 
@@ -398,9 +393,9 @@ package weave.ui
 			// redraw
 			invalidateDisplayList();
 		}
-		
+
 		/**
-		 * Handle a mouse move event. 
+		 * Handle a mouse move event.
 		 */		
 		private function handleMouseMove():void
 		{
@@ -418,23 +413,23 @@ package weave.ui
 					coords.value += _tempPoint.x + "," + _tempPoint.y + ",";
 				}
 			}
-			
+
 			// redraw
 			invalidateDisplayList();
 		}
-		
+
 		/**
-		 * Show the pen cursor if we are in edit mode. 
+		 * Show the pen cursor if we are in edit mode.
 		 * @param e The mouse event.
 		 */		
 		private function handleRollOver(e:MouseEvent):void
 		{
 			if (!_editMode)
 				return;
-			
+
 			CustomCursorManager.showCursor(CustomCursorManager.PEN_CURSOR, CursorManagerPriority.HIGH, -3, -22);
 		}
-		
+
 		/**
 		 * Turn off edit mode.
 		 * @param e The mouse event.
@@ -443,15 +438,15 @@ package weave.ui
 		{
 			if (!_editMode)
 				return;
-			
+
 			CustomCursorManager.removeAllCursors();
 		}
-		
+
 		override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
 		{
 			super.updateDisplayList(unscaledWidth, unscaledHeight);
-			
-			var visualization:PlotLayerContainer = getPlotLayerContainer(parent); 
+
+			var visualization:Visualization = getVisualization(parent); 
 			if (visualization) 
 			{
 				var lastShape:Array;
@@ -466,7 +461,7 @@ package weave.ui
 					g.drawRect(0, 0, unscaledWidth, unscaledHeight);
 					g.endFill();
 				}
-				
+
 				if (drawingMode.value == POLYGON_DRAW_MODE && polygonFillAlpha.value > 0)
 					g.beginFill(polygonFillColor.value, polygonFillAlpha.value);					
 
@@ -477,13 +472,13 @@ package weave.ui
 					for (var i:int = 0; i < points.length - 1 ; i += 2 )
 					{
 						projectCoordToScreenBounds(points[i], points[i+1], _tempPoint);
-						
+
 						if (i == 0)
 							g.moveTo(_tempPoint.x, _tempPoint.y);
 						else
 							g.lineTo(_tempPoint.x, _tempPoint.y);
 					}
-				
+
 					// If we are not drawing (or this is not the last shape), always connect back to first point in the shape.
 					// The effect of this is either completing the polygon by drawing a line or
 					// drawing to the current position of the graphics object. This is only used to
@@ -493,11 +488,11 @@ package weave.ui
 						drawingMode.value == POLYGON_DRAW_MODE)	// and drawing polygons
 					{
 						projectCoordToScreenBounds(points[0], points[1], _tempPoint);
-						
+
 						g.lineTo(_tempPoint.x, _tempPoint.y);
 					}
 				}
-				
+
 				// If we are drawing, show what the last polygon would look like if we add the current mouse position
 				// If the user drew two of three points for a triangle, this would show what the completed triangle
 				// would look like if the final point was placed under the cursor. Note that if the PenTool is disabled,
@@ -505,24 +500,24 @@ package weave.ui
 				if (_drawing && drawingMode.value == POLYGON_DRAW_MODE)
 				{
 					g.lineTo(mouseX, mouseY);
-					
+
 					lastShape = _coordsArrays[_coordsArrays.length - 1];
 					if (lastShape && lastShape.length >= 2)
 					{
 						projectCoordToScreenBounds(lastShape[0], lastShape[1], _tempPoint);
-						
+
 						g.lineStyle(lineWidth.value, lineColor.value, 0.35);
 						g.lineTo(_tempPoint.x, _tempPoint.y);
 					}
 				}
-				
+
 				if (drawingMode.value == POLYGON_DRAW_MODE && polygonFillAlpha.value > 0)
 					g.endFill();
 			} // if (visualization)
 		}
 
 		/**
-		 * Check if the mouse if off the tool. 
+		 * Check if the mouse if off the tool.
 		 * @return <code>true</code> if the mouse is outside the parent coordinates.
 		 */		
 		private function mouseOffscreen():Boolean
@@ -530,23 +525,23 @@ package weave.ui
 			return mouseX < parent.x || mouseX >= parent.x + parent.width
 				|| mouseY < parent.y || mouseY >= parent.y + parent.height;
 		}
-		
+
 		/**
-		 * Get all the keys which overlap the drawn polygons. 
+		 * Get all the keys which overlap the drawn polygons.
 		 * @return An array of IQualifiedKey objects.
 		 */		
 		public function getOverlappingKeys():Array
 		{
 			if (drawingMode.value == FREE_DRAW_MODE)
 				return [];
-			
-			var visualization:PlotLayerContainer = getPlotLayerContainer(parent);
+
+			var visualization:Visualization = getVisualization(parent);
 			if (!visualization)
 				return [];
-			
+
 			var key:IQualifiedKey;
 			var keys:Dictionary = new Dictionary();
-			var layers:Array = visualization.layers.getObjects(SelectablePlotLayer);
+			var plotterNames:Array = visualization.plotManager.plotters.getObjects();
 			var shapes:Array = WeaveAPI.CSVParser.parseCSV(coords.value);
 			for each (var shape:Array in shapes)
 			{
@@ -559,10 +554,10 @@ package weave.ui
 					_tempArray.push(newPoint);
 				}
 				_simpleGeom.setVertices(_tempArray);
-				
-				for each (var layer:SelectablePlotLayer in layers)
+
+				for each (var plotterName:String in plotterNames)
 				{
-					var spatialIndex:SpatialIndex = layer.spatialIndex as SpatialIndex;
+					var spatialIndex:SpatialIndex = visualization.plotManager.hack_getSpatialIndex(plotterName);
 					var overlappingKeys:Array = spatialIndex.getKeysGeometryOverlapGeometry(_simpleGeom);
 					for each (key in overlappingKeys)
 					{
@@ -599,17 +594,17 @@ package weave.ui
 			}
 			return result;
 		}
-				
+
 		private const _tempArray:Array = [];
 		private const _simpleGeom:SimpleGeometry = new SimpleGeometry(SimpleGeometry.CLOSED_POLYGON);
 		private const _tempScreenBounds:IBounds2D = new Bounds2D();
 		private const _tempDataBounds:IBounds2D = new Bounds2D();
 		private const _tempPoint:Point = new Point();
-		
+
 		/*************************************************/
 		/** static section                              **/
 		/*************************************************/
-		
+
 		private static var _penToolMenuItem:ContextMenuItem = null;
 		private static var _removeDrawingsMenuItem:ContextMenuItem = null;
 		private static var _changeDrawingMode:ContextMenuItem = null;
@@ -622,12 +617,12 @@ package weave.ui
 		public static const FREE_DRAW_MODE:String = lang("Free Draw Mode");
 		public static const POLYGON_DRAW_MODE:String = lang("Polygon Draw Mode");
 		private static const SELECT_RECORDS:String = lang("Select Records in Polygon");
-		private static const _menuGroupName:String = "5 drawingMenuitems";
+		private static const _menuGroupName:String = "9 drawingMenuitems";
 		public static function createContextMenuItems(destination:DisplayObject):Boolean
 		{
 			if (!destination.hasOwnProperty("contextMenu"))
 				return false;
-			
+
 			// Add a listener to this destination context menu for when it is opened
 			var contextMenu:ContextMenu = destination["contextMenu"] as ContextMenu;
 			contextMenu.addEventListener(ContextMenuEvent.MENU_SELECT, handleContextMenuOpened);
@@ -640,16 +635,16 @@ package weave.ui
 
 			_removeDrawingsMenuItem.enabled = false;
 			_changeDrawingMode.enabled = false;
-			
+
 			return true;
 		}
-		
+
 		private static function handleChangeMode(e:ContextMenuEvent):void
 		{
 			var contextMenu:ContextMenu = (WeaveAPI.topLevelApplication as UIComponent).contextMenu;
 			if (!contextMenu)
 				return;
-			
+
 			var linkableContainer:ILinkableContainer = getLinkableContainer(e.mouseTarget) as ILinkableContainer;
 			if (linkableContainer)
 			{
@@ -658,7 +653,7 @@ package weave.ui
 				{
 					// remove all the drawings and set _drawing = false
 					penObject.removeAllDrawings();
-					
+
 					if (penObject.drawingMode.value == PenTool.FREE_DRAW_MODE)
 					{
 						penObject.drawingMode.value = PenTool.POLYGON_DRAW_MODE;
@@ -671,13 +666,13 @@ package weave.ui
 					// remove all drawings because it doesn't make sense to allow the user to 
 					// select using free draw drawings.
 					penObject.coords.value = "";
-					
+
 					_removeDrawingsMenuItem.enabled = true;
 				}
 				CustomCursorManager.showCursor(CustomCursorManager.PEN_CURSOR, CursorManagerPriority.HIGH, -3, -22);
 			}
 		}
-		
+
 		/**
 		 * This function is called whenever the context menu is opened.
 		 * The function will change the caption displayed depending upon if there is any drawings.
@@ -716,7 +711,7 @@ package weave.ui
 				}
 			}
 		}
-		
+
 		/**
 		 * This function gets called whenever Enable/Disable Pen Tool is clicked in the Context Menu.
 		 * This creates a PenMouse object if there isn't one existing already.
@@ -729,10 +724,10 @@ package weave.ui
 			if (!linkableContainer)
 				return;
 
-			var visualization:PlotLayerContainer = getPlotLayerContainer(e.mouseTarget);
+			var visualization:Visualization = getVisualization(e.mouseTarget);
 			if (!visualization)
 				return;
-			
+
 			var penTool:PenTool = linkableContainer.getLinkableChildren().requestObject(PEN_OBJECT_NAME, PenTool, false);
 			if (_penToolMenuItem.caption == ENABLE_PEN)
 			{
@@ -751,7 +746,7 @@ package weave.ui
 				_penToolMenuItem.caption = ENABLE_PEN;
 			}
 		}
-		
+
 		/**
 		 * This function is passed a target and checks to see if the target is an ILinkableContainer.
 		 * Either a ILinkableContainer or null will be returned.
@@ -759,31 +754,29 @@ package weave.ui
 		private static function getLinkableContainer(target:*):*
 		{
 			var targetComponent:* = target;
-			
+
 			while (targetComponent)
 			{
 				if (targetComponent is ILinkableContainer)
 					return targetComponent as ILinkableContainer;
-				
+
 				targetComponent = targetComponent.parent;
 			}
-			
+
 			return targetComponent;
 		}
 
 		/**
 		 * @param target The UIComponent for which to get its PlotLayerContainer.
-		 * @return The PlotLayerContainer visualization for the target if it has one. 
+		 * @return The PlotLayerContainer visualization for the target if it has one.
 		 */		
-		private static function getPlotLayerContainer(target:*):PlotLayerContainer
+		private static function getVisualization(mouseTarget:Object):Visualization
 		{
-			var linkableContainer:ILinkableContainer = getLinkableContainer(target);
-			if (!linkableContainer || !(linkableContainer is SimpleVisTool))
+			var linkableContainer:ILinkableContainer = getLinkableContainer(mouseTarget);
+			if (!linkableContainer)
 				return null;
-			
-			var visualization:PlotLayerContainer = (linkableContainer as SimpleVisTool).visualization as PlotLayerContainer;
-			
-			return visualization;
+
+			return linkableContainer.getLinkableChildren().getObjects(Visualization)[0] as Visualization;
 		}
 		/**
 		 * This function occurs when Remove All Drawings is pressed.
@@ -792,13 +785,13 @@ package weave.ui
 		private static function handleEraseDrawingsMenuItem(e:ContextMenuEvent):void
 		{
 			var linkableContainer:ILinkableContainer = getLinkableContainer(e.mouseTarget);
-			
+
 			if (linkableContainer)
 				linkableContainer.getLinkableChildren().removeObject( PEN_OBJECT_NAME );
 			_penToolMenuItem.caption = ENABLE_PEN;
 			_removeDrawingsMenuItem.enabled = false;
 		}
-		
+
 //		/**
 //		 * This function is called when the select records context menu item is clicked. 
 //		 * @param e The event.
@@ -817,3 +810,5 @@ package weave.ui
 //		}		
 	}
 }
+
+

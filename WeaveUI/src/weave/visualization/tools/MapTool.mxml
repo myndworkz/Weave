@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 /*
-    Weave (Web-based Analysis and Visualization Environment)
-    Copyright (C) 2008-2011 University of Massachusetts Lowell
+	Weave (Web-based Analysis and Visualization Environment)
+	Copyright (C) 2008-2011 University of Massachusetts Lowell
 
-    This file is a part of Weave.
+	This file is a part of Weave.
 
-    Weave is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License, Version 3,
-    as published by the Free Software Foundation.
+	Weave is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License, Version 3,
+	as published by the Free Software Foundation.
 
-    Weave is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	Weave is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with Weave.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with Weave.  If not, see <http://www.gnu.org/licenses/>.
 */
 -->
 <SimpleVisTool xmlns="weave.visualization.tools.*" 
-	     xmlns:mx="http://www.adobe.com/2006/mxml"
-	     xmlns:ui="weave.ui.*"
-	     layout="absolute" xmlns:userControls="weave.ui.userControls.*" creationPolicy="all"
-	     xmlns:mapTool="weave.visualization.tools.*" xmlns:managers="weave.editors.managers.*"
-	     >
+			   xmlns:mx="http://www.adobe.com/2006/mxml"
+			   xmlns:ui="weave.ui.*"
+			   layout="absolute" xmlns:userControls="weave.ui.userControls.*" creationPolicy="all"
+			   xmlns:mapTool="weave.visualization.tools.*" xmlns:managers="weave.editors.managers.*"
+			   >
 	<mx:Script>
 		<![CDATA[
 			import mx.controls.CheckBox;
 			import mx.utils.ObjectUtil;
-			
+
 			import weave.Weave;
 			import weave.api.WeaveAPI;
 			import weave.api.copySessionState;
@@ -41,7 +41,7 @@
 			import weave.api.linkSessionState;
 			import weave.api.primitives.IBounds2D;
 			import weave.api.registerLinkableChild;
-			import weave.api.ui.IPlotLayer;
+			import weave.api.ui.IPlotter;
 			import weave.api.ui.IVisTool;
 			import weave.core.LinkableBoolean;
 			import weave.core.LinkableString;
@@ -55,40 +55,43 @@
 			import weave.ui.ColorController;
 			import weave.ui.DraggablePanel;
 			import weave.ui.DynamicColumnComponent;
+			import weave.ui.SubMenu;
 			import weave.utils.ColumnUtils;
 			import weave.utils.ProbeTextUtils;
 			import weave.visualization.layers.InteractionController;
-			import weave.visualization.layers.PlotLayer;
-			import weave.visualization.layers.SelectablePlotLayer;
+			import weave.visualization.layers.LayerSettings;
 			import weave.visualization.plotters.GeometryLabelPlotter;
 			import weave.visualization.plotters.GeometryPlotter;
 			import weave.visualization.plotters.SingleImagePlotter;
 			import weave.visualization.plotters.WMSPlotter;
 
 			WeaveAPI.registerImplementation(IVisTool, MapTool, "Map");
-			
-			// disable default plot layer
-			override protected function get plotLayer():SelectablePlotLayer { return null; }
-			
+
+			// no main plotter
+			override protected function get mainPlotter():IPlotter { return null; }
+
 			override protected function constructor():void
 			{
 				super.constructor();
-								
+
 				// make sure WMS layers are included in the full data bounds
-				visualization.includeNonSelectableLayersInAutoZoom.value = true;
-				visualization.includeNonSelectableLayersInAutoZoom.lock();
-				
-				visualization.enableFixedAspectRatio.value = true;
-				visualization.enableAutoZoomToExtent.value = false;
+				visualization.plotManager.includeNonSelectableLayersInAutoZoom.value = true;
+				visualization.plotManager.includeNonSelectableLayersInAutoZoom.lock();
+
+				visualization.plotManager.enableFixedAspectRatio.value = true;
+				visualization.plotManager.enableAutoZoomToExtent.value = false;
 				getCallbackCollection(visualization).addGroupedCallback(this, updateZoomSlider);
-				
+
 				colorColumn.addGroupedCallback(this, handlePanelTitleChange);
 				Weave.properties.toolInteractions.defaultDragMode.addGroupedCallback(this, handleMouseModeChange);
-				
-				visualization.layers.addGroupedCallback(this,handleLayersChange,true);
-				colorColumn.addGroupedCallback(this,updateProbeColumns, true);				
+
+				visualization.plotManager.plotters.addGroupedCallback(this,handlePlottersChange,true);
+				colorColumn.addGroupedCallback(this,updateProbeColumns, true);
+
 			}
-			
+
+			private var selectionSubMenu:SubMenu;
+
 			override public function getSelectableAttributeNames():Array
 			{
 				return ["Color"];
@@ -97,7 +100,7 @@
 			{
 				return [colorColumn];
 			}
-			
+
 			/**
 			 * This function moves the overview window in front of the visualization
 			 */
@@ -105,7 +108,7 @@
 			{
 				children.setNameOrder([OVERVIEW_PANEL_NAME]);
 			}
-			
+
 			/**
 			 * This is the projection of the map visualization.
 			 */
@@ -118,9 +121,9 @@
 					return true;
 				return WeaveAPI.ProjectionManager.projectionExists(srs);
 			}
-			
+
 			public const includeToolAttributesInProbe:LinkableBoolean = registerLinkableChild(this, new LinkableBoolean(true), updateProbeColumns);
-			
+
 			// the keys in this Dictionary are LinkableStrings that have been linked to projectionSRS.
 			private var _linkedProjectionVariablesLookup:Dictionary = new Dictionary(true);
 			/**
@@ -131,16 +134,16 @@
 				if (_linkedProjectionVariablesLookup[otherVariable])
 					return;
 				_linkedProjectionVariablesLookup[otherVariable] = true;
-				
+
 				// if map tool specifies a valid projection, use map tool value as the primary value
 				if (WeaveAPI.ProjectionManager.projectionExists(projectionSRS.value))
 					linkSessionState(projectionSRS, otherVariable);
 				else
 					linkSessionState(otherVariable, projectionSRS);
 			}
-			
+
 			[Bindable] private var _projComboBoxData:Array = [];
-			private function handleLayersChange():void
+			private function handlePlottersChange():void
 			{
 				_projComboBoxData.length = 0;
 				// TEMPORARY: set the selected item in the combo box because changing the data provider 
@@ -150,11 +153,11 @@
 					_projComboBoxData.push(projectionSRS.value);
 					projComboBox.selectedItem = projectionSRS.value; 
 				}
-				
+
 				var projString:String;
-				
+
 				// make sure wms layer projections are identical
-				var wmsPlotters:Array = WeaveAPI.SessionManager.getLinkableDescendants(visualization.layers, WMSPlotter);
+				var wmsPlotters:Array = WeaveAPI.SessionManager.getLinkableDescendants(visualization.plotManager.plotters, WMSPlotter);
 				for each (var wmsPlotter:WMSPlotter in wmsPlotters)
 				{
 					linkProjection(wmsPlotter.srs);
@@ -162,9 +165,9 @@
 					if (projString && _projComboBoxData.indexOf(projString) < 0)
 						_projComboBoxData.push(projString);
 				}
-				
+
 				// make sure all geometry column projections are identical
-				var reprojectedColumns:Array = WeaveAPI.SessionManager.getLinkableDescendants(visualization.layers, ReprojectedGeometryColumn);
+				var reprojectedColumns:Array = WeaveAPI.SessionManager.getLinkableDescendants(visualization.plotManager.plotters, ReprojectedGeometryColumn);
 				for each (var column:ReprojectedGeometryColumn in reprojectedColumns)
 				{
 					linkProjection(column.projectionSRS);
@@ -172,11 +175,6 @@
 					if (projString && _projComboBoxData.indexOf(projString) < 0)
 						_projComboBoxData.push(projString);					
 				}
-				
-				// force label plotters to use text bitmap filters
-				for each (var layer:SelectablePlotLayer in visualization.layers.getObjects(SelectablePlotLayer))
-					if (layer.getDynamicPlotter().internalObject is GeometryLabelPlotter)
-						layer.useTextBitmapFilters.value = true;
 
 				updateProbeColumns();
 			}
@@ -184,48 +182,60 @@
 			{
 				if (includeToolAttributesInProbe.value)
 				{
-					visualization.additionalProbeColumns = [] ;
-					var plotLayers:Array = visualization.layers.getObjects(SelectablePlotLayer);
-					for (var i:int = 0; i < plotLayers.length; i++)
-					{
-						var spl:SelectablePlotLayer = (plotLayers[i] as SelectablePlotLayer);
-						// get all ReferencedColumn objects, excluding geometry columns
-						var refCols:Array = WeaveAPI.SessionManager.getLinkableDescendants(spl.plotter, ReferencedColumn);
-						for each (var col:IAttributeColumn in refCols)
-							if (ObjectUtil.stringCompare(ColumnUtils.getDataType(col), DataTypes.GEOMETRY, true) != 0) // non-geometry
-								visualization.additionalProbeColumns.push(col);
-					}
+					visualization.additionalProbeColumns = [];
+					// get all ReferencedColumn objects, excluding geometry columns
+					var refCols:Array = WeaveAPI.SessionManager.getLinkableDescendants(visualization, ReferencedColumn);
+					for each (var col:IAttributeColumn in refCols)
+						if (ObjectUtil.stringCompare(ColumnUtils.getDataType(col), DataTypes.GEOMETRY, true) != 0) // non-geometry
+							visualization.additionalProbeColumns.push(col);
 				}
 				else
 					visualization.additionalProbeColumns = null;
 			}
-			
+
 			override protected function get defaultPanelTitle():String
 			{
 				return "Map " + (colorColumn.getInternalColumn() == null ? '' : "of " + ColumnUtils.getTitle(colorColumn));
 			}
-			
+
 			override protected function createChildren():void
 			{
 				super.createChildren();
-				
+
 				var backgroundImageCheck:CheckBox = new CheckBox();
 				backgroundImageCheck.label = "Enable ocean background image";
 				linkBindableProperty(enableBackground, backgroundImageCheck, "selected");
 				windowSettingsEditor.initialize();
 				windowSettingsEditor.addChild(backgroundImageCheck);
 				windowSettingsEditor.removeChild(windowSettingsEditor.titleControls);
+
 				windowSettingsEditor.addChildAt(simpleAxisEditor.titleControls, 0);
 				simpleAxisEditor.parent.removeChild(simpleAxisEditor);
-				
-				linkBindableProperty(visualization.minZoomLevel, this, "zoomSliderMinimum");
-				linkBindableProperty(visualization.maxZoomLevel, this, "zoomSliderMaximum");
-				
-				if (visualization.layers.getNames().length == 0)
+
+				linkBindableProperty(visualization.plotManager.minZoomLevel, this, "zoomSliderMinimum");
+				linkBindableProperty(visualization.plotManager.maxZoomLevel, this, "zoomSliderMaximum");
+
+				if (visualization.plotManager.plotters.getNames().length == 0)
 					addGeomLayer();
-				getCallbackCollection(visualization.zoomBounds).addGroupedCallback(this, handleBoundsChange, true);
+				getCallbackCollection(visualization.plotManager.zoomBounds).addGroupedCallback(this, handleBoundsChange, true);
 			}
-			
+
+			override protected function childrenCreated():void
+			{
+				super.childrenCreated();
+
+				selectionSubMenu= new SubMenu(selectModeButton,[MouseEvent.MOUSE_DOWN],[MouseEvent.MOUSE_UP]);
+
+				selectionSubMenu.addSubMenuItem(lang("Rectangular Selection"),function():void{
+					Weave.properties.selectionMode.value = InteractionController.SELECTION_MODE_RECTANGLE;});
+
+				selectionSubMenu.addSubMenuItem(lang("Circular Selection"),function():void{
+					Weave.properties.selectionMode.value = InteractionController.SELECTION_MODE_CIRCLE;});
+
+				selectionSubMenu.addSubMenuItem(lang("Lasso Selection"),function():void{
+					Weave.properties.selectionMode.value = InteractionController.SELECTION_MODE_LASSO;});
+			}
+
 			private function handleMouseModeChange(event:Event = null):void
 			{
 				var defaultMode:String;
@@ -253,7 +263,7 @@
 					Weave.properties.toolInteractions.defaultDragMode.value = defaultMode;
 				}
 				defaultMode = Weave.properties.toolInteractions.defaultDragMode.value;
-				
+
 				var buttonMap:Object = {};
 				buttonMap[InteractionController.PAN] = panModeButton;
 				buttonMap[InteractionController.SELECT] = selectModeButton;
@@ -264,14 +274,14 @@
 				for each (var button:Button in buttonMap)
 					button.selected = (button == selectedButton);
 			}
-			
-			
+
+
 			public function get colorColumn():DynamicColumn
 			{
 				return Weave.defaultColorDataColumn.internalDynamicColumn;
 			}
-			
-			
+
+
 			private function setCenterCoords():void
 			{
 //				var x:Number = MathLib.toNumber(xCenterCoord.text);
@@ -280,7 +290,7 @@
 //				_tempBounds.setCenter(x, y);
 //				visualization.dataBounds.copyFrom(_tempBounds);
 			}
-			
+
 			public function updateZoomSlider():void
 			{
 				if (zoomSlider)
@@ -291,52 +301,58 @@
 				}
 			}
 			private var currentlyUpdatingZoomSlider:Boolean = false;
-			
+
 			private function handleZoomSliderChange(event:Event):void
 			{
 				if (!currentlyUpdatingZoomSlider)
 					visualization.setZoomLevel(event.currentTarget.value);
 			}
-			
+
 			private function handleZoomInClick():void
 			{
-				visualization.zoomBounds.getDataBounds(_tempBounds);
-				_tempBounds.centeredResize(_tempBounds.getWidth() / 2, _tempBounds.getHeight() / 2);
-				visualization.zoomBounds.setDataBounds(_tempBounds);
+				visualization.plotManager.zoomBounds.getDataBounds(_tempBounds);
+				_tempBounds.centeredResize(
+					_tempBounds.getWidth() / visualization.zoomFactor.value,
+					_tempBounds.getHeight() / visualization.zoomFactor.value
+					);
+				visualization.plotManager.zoomBounds.setDataBounds(_tempBounds);
 			}
-			
+
 			private function handleZoomOutClick():void
 			{
-				visualization.zoomBounds.getDataBounds(_tempBounds);
-				_tempBounds.centeredResize(_tempBounds.getWidth() * 2, _tempBounds.getHeight() * 2);
-				visualization.zoomBounds.setDataBounds(_tempBounds);
+				visualization.plotManager.zoomBounds.getDataBounds(_tempBounds);
+				_tempBounds.centeredResize(
+					_tempBounds.getWidth() * visualization.zoomFactor.value,
+					_tempBounds.getHeight() * visualization.zoomFactor.value
+					);
+				visualization.plotManager.zoomBounds.setDataBounds(_tempBounds);
 			}
-			
+
 			private function handlePanButtonClick(xPan:Number, yPan:Number):void
 			{
 				var panPercent:Number = 0.3;
-				
-				visualization.zoomBounds.getDataBounds(_tempBounds);
+
+				visualization.plotManager.zoomBounds.getDataBounds(_tempBounds);
 				_tempBounds.offset(
-						_tempBounds.getWidth() * panPercent * xPan,
-						_tempBounds.getHeight() * panPercent * yPan
+					_tempBounds.getWidth() * panPercent * xPan,
+					_tempBounds.getHeight() * panPercent * yPan
 					);
-				visualization.zoomBounds.setDataBounds(_tempBounds);
+				visualization.plotManager.zoomBounds.setDataBounds(_tempBounds);
 			}
-			
+
 			private var _tempBounds:IBounds2D = new Bounds2D();
 
 			[Embed(source="/weave/resources/images/ocean_background2.jpg")]
 			private static const BackgroundImage:Class;
 			private static const backgroundImageBitmapData:BitmapData = (new BackgroundImage() as Bitmap).bitmapData;
-			
+
 			public const enableBackground:LinkableBoolean = registerLinkableChild(this, new LinkableBoolean(false), invalidateDisplayList);
 			public const enableOverview:LinkableBoolean = registerLinkableChild(this, new LinkableBoolean(false), updateOverviewWindow);
-			
+
 			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
 			{
 				super.updateDisplayList(unscaledWidth, unscaledHeight);
-				
+
 				visualization.graphics.clear();
 				if (enableBackground.value)
 				{
@@ -345,40 +361,39 @@
 					visualization.graphics.drawRect(0, 0, visualization.width, visualization.height);
 				}
 			}
-			
+
 			private function addGeomLayer():void
 			{
-				var layer:SelectablePlotLayer = visualization.layers.requestObject(visualization.layers.generateUniqueName("plot"), SelectablePlotLayer, false);
-				var plotter:GeometryPlotter = layer.getDynamicPlotter().requestLocalObject(GeometryPlotter, true);
+				var name:String = visualization.plotManager.plotters.generateUniqueName("plot");
+				visualization.plotManager.plotters.requestObject(name, GeometryPlotter, false);
 			}
-			
+
 			private function addLabelLayer():void
 			{
 				var i:int;
 				// get existing layers before they change
-				var layers:Array = visualization.layers.getObjects(SelectablePlotLayer).reverse(); // top to bottom
+				var layerNames:Array = visualization.plotManager.plotters.getNames().reverse(); // top to bottom
 				// if a layer is selected in the editor, check that one first.
-				if (layerEditor.selectedItem is SelectablePlotLayer)
-					layers.unshift(layerEditor.selectedItem);
+				if (visualization.plotManager.getPlotter(layerEditor.selectedItem as String))
+					layerNames.unshift(layerEditor.selectedItem);
 				// create new label layer
-				var labelLayer:SelectablePlotLayer = visualization.layers.requestObject(visualization.layers.generateUniqueName("label"), SelectablePlotLayer, false);
-				var plotter:GeometryLabelPlotter = labelLayer.getDynamicPlotter().requestLocalObject(GeometryLabelPlotter, true);
+				var labelLayerName:String = visualization.plotManager.plotters.generateUniqueName("label");
+				var labelPlotter:GeometryLabelPlotter = visualization.plotManager.plotters.requestObject(labelLayerName, GeometryLabelPlotter, false);
 				// loop through existing layers to find geometry layer that we can add corresponding labels for
-				for (i = 0; i < layers.length; i++)
+				for each (var layerName:String in layerNames)
 				{
-					var geomLayer:SelectablePlotLayer = layers[i];
-					var geomPlotter:GeometryPlotter = geomLayer.getDynamicPlotter().internalObject as GeometryPlotter;
+					var geomPlotter:GeometryPlotter = visualization.plotManager.getPlotter(layerName) as GeometryPlotter;
 					if (geomPlotter)
 					{
 						// found a geometry layer
-						copySessionState(geomPlotter.geometryColumn, plotter.geometryColumn);
+						copySessionState(geomPlotter.geometryColumn, labelPlotter.geometryColumn);
 						// see if there is a matching column in probe headers
 						var headers:Array = ProbeTextUtils.probeHeaderColumns.getObjects();
 						for (i = 0; i < headers.length; i++)
 						{
 							if (ColumnUtils.getKeyType(headers[i]) == ColumnUtils.getKeyType(geomPlotter.geometryColumn))
 							{
-								plotter.text.requestLocalObjectCopy(headers[i]);
+								labelPlotter.text.requestLocalObjectCopy(headers[i]);
 								break;
 							}
 						}
@@ -387,60 +402,57 @@
 					}
 				}
 			}
-			
+
 			private function addWMSLayer():void
 			{
-				var oldLayerNames:Array = visualization.layers.getNames();
-				var layer:PlotLayer = visualization.layers.requestObject(visualization.layers.generateUniqueName("wms"), PlotLayer, false);
-				var plotter:WMSPlotter = layer.getDynamicPlotter().requestLocalObject(WMSPlotter, true) as WMSPlotter;
-				
-				//plotter.serviceName = WMSProviders.NASA;
+				var oldLayerNames:Array = visualization.plotManager.plotters.getNames();
+
+				var name:String = visualization.plotManager.plotters.generateUniqueName("wms");
+				visualization.plotManager.plotters.requestObject(name, WMSPlotter, false);
+
 				// put old layers on top
-				visualization.layers.setNameOrder(oldLayerNames);
+				visualization.plotManager.plotters.setNameOrder(oldLayerNames);
 			}
 
 			private function handleBoundsChange():void
 			{
 				// update center coordinates text boxes
-				visualization.zoomBounds.getDataBounds(_tempBounds);
+				visualization.plotManager.zoomBounds.getDataBounds(_tempBounds);
 				xCenterCoord.text = String(_tempBounds.getXCenter());
 				yCenterCoord.text = String(_tempBounds.getYCenter());
 			}
-			
+
 			public var overviewPanel:MapOverviewWindow;
 			private const OVERVIEW_PANEL_NAME:String = "overview";
-			
+
 			private function updateOverviewWindow():void
 			{				
 				if (enableOverview.value)
 				{					
-					overviewPanel = children.requestObject(OVERVIEW_PANEL_NAME,MapOverviewWindow,false); //not locked because it should be removable
-					overviewPanel.parentTool = this;
+					overviewPanel = children.requestObject(OVERVIEW_PANEL_NAME, MapOverviewWindow, false); //not locked because it should be removable
 
 					// remove overview window from parent's session state
 					(WeaveAPI.SessionManager as SessionManager).excludeLinkableChildFromSessionState(children, overviewPanel);
-					linkSessionState(visualization.layers, overviewPanel.visualization.layers);
-					linkSessionState(visualization.zoomBounds, overviewPanel.parentZoomBounds);
+					linkSessionState(visualization.plotManager.layerSettings, overviewPanel.visualization.plotManager.layerSettings);
+					linkSessionState(visualization.plotManager.plotters, overviewPanel.visualization.plotManager.plotters);
+					linkSessionState(visualization.plotManager.zoomBounds, overviewPanel.parentZoomBounds);
 					children.addGroupedCallback(this, bringOverviewToTop);
-					visualization.layers.addGroupedCallback(this,overviewPanel.drawBoundsRectangle);
 				}
 				else
 				{
 					children.removeObject(OVERVIEW_PANEL_NAME);
 				}
 			}
-			
+
 			public function addMarker(name:String,url:String,x:Number,y:Number,width:Number=NaN,height:Number=NaN):void
 			{
-				var plotLayer:PlotLayer = visualization.layers.requestObject(name, PlotLayer, false);
-				
-				var marker:SingleImagePlotter = plotLayer.getDynamicPlotter().requestLocalObject(SingleImagePlotter, false);
-				
+				var marker:SingleImagePlotter = visualization.plotManager.plotters.requestObject(name, SingleImagePlotter, false);
+
 				marker.imageURL.value = url;
-				
+
 				marker.dataX.value = x;
 				marker.dataY.value = y;
-				
+
 				marker.dataWidth.value = width;
 				marker.dataHeight.value = height;
 			}
@@ -449,29 +461,21 @@
 
 			public const showZoomControls:LinkableBoolean = registerLinkableChild(this, new LinkableBoolean(true));
 			public const showMouseModeControls:LinkableBoolean = registerLinkableChild(this, new LinkableBoolean(true));
-			
+
 			private const _tempArray:Array = [];
-			
+
 			private function handleProjectionComboChange():void
 			{
 				if (UIUtils.hasFocus(projComboBox))
 				{
 					// clear all layer visibility settings because they are no longer valid in the new projection
-					visualization.layers.delayCallbacks();
-					for each (var layer:IPlotLayer in visualization.layers.getObjects(IPlotLayer))
+					visualization.plotManager.layerSettings.delayCallbacks();
+					for each (var settings:LayerSettings in visualization.plotManager.layerSettings.getObjects())
 					{
-						if (layer is PlotLayer)
-						{
-							(layer as PlotLayer).minVisibleScale.value = 0;
-							(layer as PlotLayer).maxVisibleScale.value = Infinity;
-						}
-						if (layer is SelectablePlotLayer)
-						{
-							(layer as SelectablePlotLayer).minVisibleScale.value = 0;
-							(layer as SelectablePlotLayer).maxVisibleScale.value = Infinity;
-						}
+						settings.minVisibleScale.value = 0;
+						settings.maxVisibleScale.value = Infinity;
 					}
-					visualization.layers.resumeCallbacks();
+					visualization.plotManager.layerSettings.resumeCallbacks();
 				}
 				if (projectionVerifier(projComboBox.text))
 				{
@@ -484,43 +488,43 @@
 					projComboBox.errorString = 'Unknown projection';
 				}
 			}
-			
-			
+
+
 			// BACKWARDS COMPATIBILITY
-			[Deprecated(replacement="visualization.zoomToSelection")] public function get zoomToSelection():Function { return visualization.zoomToSelection; }
+			[Deprecated(replacement="visualization.zoomToSelection")] public function get zoomToSelection():Function { return visualization.plotManager.zoomToSelection; }
 		]]>
 	</mx:Script>
 	<mx:VBox id="mapControls" x="0" y="0" width="80" height="300" horizontalAlign="center">
-	<!-- <mx:VBox id="mapControls"
-			 	visible="{enableZoomToggle.selected}"
-			 	includeInLayout="{enableZoomToggle.selected}"
-				horizontalAlign="center"
-				verticalGap="{zoomControlsToggle.selected ? 2 : 0}"
-				horizontalScrollPolicy="off" verticalScrollPolicy="off"
-				paddingLeft="2" paddingRight="2" paddingBottom="2" paddingTop="2"
-				right="0" bottom="0"
-				backgroundColor="white" backgroundAlpha="0.01"> -->
+		<!-- <mx:VBox id="mapControls"
+				  visible="{enableZoomToggle.selected}"
+				  includeInLayout="{enableZoomToggle.selected}"
+					horizontalAlign="center"
+					verticalGap="{zoomControlsToggle.selected ? 2 : 0}"
+					horizontalScrollPolicy="off" verticalScrollPolicy="off"
+					paddingLeft="2" paddingRight="2" paddingBottom="2" paddingTop="2"
+					right="0" bottom="0"
+					backgroundColor="white" backgroundAlpha="0.01"> -->
 		<mx:VBox paddingLeft="2" paddingRight="2" paddingBottom="2" paddingTop="2"
-				includeInLayout="{zoomControlsToggle.selected}"
-				visible="{zoomControlsToggle.selected}"
-				verticalGap="2">
-			
+				 includeInLayout="{zoomControlsToggle.selected}"
+				 visible="{zoomControlsToggle.selected}"
+				 verticalGap="2">
+
 			<mx:VBox id="panControls" horizontalAlign="center" verticalGap="1" height="100%">
 				<mx:Button id="north"
-							label="N"
-							fillAlphas="[1.0, 1.0, 1.0, 1.0]"
-							width="16" height="16"
-							click="handlePanButtonClick(0,1)"
-							labelPlacement="left" fontSize="10" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" cornerRadius="0" textAlign="center"
-							/>
-				
+						   label="N"
+						   fillAlphas="[1.0, 1.0, 1.0, 1.0]"
+						   width="16" height="16"
+						   click="handlePanButtonClick(0,1)"
+						   labelPlacement="left" fontSize="10" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" cornerRadius="0" textAlign="center"
+						   />
+
 				<mx:HBox horizontalGap="2">			
 					<mx:Button id="west"
-						    label="W" toolTip=""
-							fillAlphas="[1.0, 1.0, 1.0, 1.0]"
-							width="16" height="16"
-							click="handlePanButtonClick(-1,0)"
-							 labelPlacement="left" fontSize="10" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" cornerRadius="0" textAlign="center"/>
+							   label="W" toolTip=""
+							   fillAlphas="[1.0, 1.0, 1.0, 1.0]"
+							   width="16" height="16"
+							   click="handlePanButtonClick(-1,0)"
+							   labelPlacement="left" fontSize="10" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" cornerRadius="0" textAlign="center"/>
 					<mx:Button id="zoomToExtentButton"
 							   toolTip="Click this button to zoom to map's full extent"
 							   icon="@Embed(source='/weave/resources/images/zoomToExtent.png')"
@@ -529,34 +533,34 @@
 							   cornerRadius="0"
 							   click="visualization.zoomToSelection()"/>
 					<mx:Button id="east"
-						    label="E"
-							fillAlphas="[1.0, 1.0, 1.0, 1.0]"
-							width="16" height="16"
-							click="handlePanButtonClick(1,0)"
-							labelPlacement="left" fontSize="10" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" cornerRadius="0" textAlign="center"/>
+							   label="E"
+							   fillAlphas="[1.0, 1.0, 1.0, 1.0]"
+							   width="16" height="16"
+							   click="handlePanButtonClick(1,0)"
+							   labelPlacement="left" fontSize="10" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" cornerRadius="0" textAlign="center"/>
 				</mx:HBox>
-				
+
 				<mx:Button id="south"
-							label="S"
-							fillAlphas="[1.0, 1.0, 1.0, 1.0]"
-							width="16" height="16"
-							click="handlePanButtonClick(0,-1)"
-							labelPlacement="left" fontSize="10" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" cornerRadius="0" textAlign="center"/>
+						   label="S"
+						   fillAlphas="[1.0, 1.0, 1.0, 1.0]"
+						   width="16" height="16"
+						   click="handlePanButtonClick(0,-1)"
+						   labelPlacement="left" fontSize="10" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" cornerRadius="0" textAlign="center"/>
 			</mx:VBox>
 		</mx:VBox>
-		
+
 		<mx:VBox paddingLeft="2" paddingRight="2" paddingBottom="2" paddingTop="2"
-				verticalGap="2"
-				includeInLayout="{zoomControlsToggle.selected}"
-				visible="{zoomControlsToggle.selected}"
-				backgroundColor="white" backgroundAlpha="0.85" borderStyle="outset">
+				 verticalGap="2"
+				 includeInLayout="{zoomControlsToggle.selected}"
+				 visible="{zoomControlsToggle.selected}"
+				 backgroundColor="white" backgroundAlpha="0.85" borderStyle="outset">
 			<mx:Button id="zoomIn"
-					icon="@Embed(source='/weave/resources/images/zoomPlus.png')"
-					fillAlphas="[1.0, 1.0, 1.0, 1.0]"
-					width="15" height="15"
-					click="handleZoomInClick()"
-					cornerRadius="0" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" textAlign="center"/>
-			
+					   icon="@Embed(source='/weave/resources/images/zoomPlus.png')"
+					   fillAlphas="[1.0, 1.0, 1.0, 1.0]"
+					   width="15" height="15"
+					   click="handleZoomInClick()"
+					   cornerRadius="0" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" textAlign="center"/>
+
 			<mx:VSlider id="zoomSlider"
 						showDataTip="false"
 						allowTrackClick="true"
@@ -566,17 +570,17 @@
 						maximum="{zoomSliderMaximum}"
 						height="88"
 						change="handleZoomSliderChange(event);"/>
-			
+
 			<mx:Button id="zoomOut"
-					icon="@Embed(source='/weave/resources/images/zoomMinus.png')"
-					fillAlphas="[1.0, 1.0, 1.0, 1.0]"
-					width="15" height="15"
-					 click="handleZoomOutClick()"
-					 cornerRadius="0" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" textAlign="center"/>
+					   icon="@Embed(source='/weave/resources/images/zoomMinus.png')"
+					   fillAlphas="[1.0, 1.0, 1.0, 1.0]"
+					   width="15" height="15"
+					   click="handleZoomOutClick()"
+					   cornerRadius="0" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" textAlign="center"/>
 		</mx:VBox>
-		
+
 		<mx:Spacer height="5" includeInLayout="{zoomControlsToggle.selected}"/>
-	
+
 		<!--rollOver="mouseModeBox.alpha = 1" rollOut="mouseModeBox.alpha = 0"-->
 		<mx:HBox id="mouseModeBox" horizontalGap="1" right="2" bottom="2"  
 				 includeInLayout="{mouseModeControlsToggle.selected}"
@@ -584,53 +588,53 @@
 				 backgroundColor="white" backgroundAlpha="0.01"
 				 alpha="1"> 
 			<mx:Button id="panModeButton" 
-				icon="@Embed(source='/weave/resources/images/cursor_hand.png')"
-				fillAlphas="[1,1]"  fillColors="{panModeButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
-				alpha="{panModeButton.selected ? 1 : 0.5}"
-				width="17" height="17" 
-				toggle="true"
-				toolTip="Select this mode to enable panning on the map using the mouse."
-				click="handleMouseModeChange(event)" cornerRadius="0"/>
+					   icon="@Embed(source='/weave/resources/images/cursor_hand.png')"
+					   fillAlphas="[1,1]"  fillColors="{panModeButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
+					   alpha="{panModeButton.selected ? 1 : 0.5}"
+					   width="17" height="17" 
+					   toggle="true"
+					   toolTip="Select this mode to enable panning on the map using the mouse."
+					   click="handleMouseModeChange(event)" cornerRadius="0"/>
 			<mx:Button id="selectModeSubtractButton"
-				icon="@Embed(source='/weave/resources/images/selectMode_subtract.png')"
-				fillAlphas="[1,1]"  fillColors="{selectModeSubtractButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
-				alpha="{selectModeSubtractButton.selected ? 1 : 0.5}" 
-				width="0" minWidth="0" height="17" 
-				visible="false"
-				toggle="true"
-				toolTip="Select this mode to enable subtracting selections from existing selections of shapes on the map using the mouse."
-				click="handleMouseModeChange(event)" cornerRadius="0"
-				/>
+					   icon="@Embed(source='/weave/resources/images/selectMode_subtract.png')"
+					   fillAlphas="[1,1]"  fillColors="{selectModeSubtractButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
+					   alpha="{selectModeSubtractButton.selected ? 1 : 0.5}" 
+					   width="0" minWidth="0" height="17" 
+					   visible="false"
+					   toggle="true"
+					   toolTip="Select this mode to enable subtracting selections from existing selections of shapes on the map using the mouse."
+					   click="handleMouseModeChange(event)" cornerRadius="0"
+					   />
 			<mx:Button id="selectModeButton"
-				icon="@Embed(source='/weave/resources/images/selectMode.png')"
-				fillAlphas="[1,1]"  fillColors="{selectModeButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
-				alpha="{selectModeButton.selected ? 1 : 0.5}"
-				width="17" height="17"
-				toggle="true"
-				toolTip="Select this mode to enable adding selections to existing selections of shapes on the map using the mouse."
-				click="handleMouseModeChange(event)" cornerRadius="0"
-				selected="true"/>
+					   icon="@Embed(source='/weave/resources/images/selectMode.png')"
+					   fillAlphas="[1,1]"  fillColors="{selectModeButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
+					   alpha="{selectModeButton.selected ? 1 : 0.5}"
+					   width="17" height="17"
+					   toggle="true"
+					   toolTip="Select this mode to enable adding selections to existing selections of shapes on the map using the mouse."
+					   click="handleMouseModeChange(event)" cornerRadius="0"
+					   selected="true"/>
 			<mx:Button id="selectModeAddButton"
-				icon="@Embed(source='/weave/resources/images/selectMode_add.png')"
-				fillAlphas="[1,1]"  fillColors="{selectModeAddButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
-				alpha="{selectModeAddButton.selected ? 1 : 0.5}"
-				width="0" minWidth="0" height="17"
-				visible="false"
-				toggle="true"
-				toolTip="Select this mode to enable selection of shapes on the map using the mouse."
-				click="handleMouseModeChange(event)" cornerRadius="0"
-				/>
+					   icon="@Embed(source='/weave/resources/images/selectMode_add.png')"
+					   fillAlphas="[1,1]"  fillColors="{selectModeAddButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
+					   alpha="{selectModeAddButton.selected ? 1 : 0.5}"
+					   width="0" minWidth="0" height="17"
+					   visible="false"
+					   toggle="true"
+					   toolTip="Select this mode to enable selection of shapes on the map using the mouse."
+					   click="handleMouseModeChange(event)" cornerRadius="0"
+					   />
 			<mx:Button id="zoomModeButton"
-				icon="@Embed(source='/weave/resources/images/zoomMode.png')"
-				fillAlphas="[1,1]" fillColors="{zoomModeButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
-				alpha="{zoomModeButton.selected ? 1 : 0.5}"
-				width="17" height="17" 
-				toggle="true"
-				toolTip="Select this mode to enable zooming on the map using the mouse to create a box around the area you want to zoom into."
-				click="handleMouseModeChange(event)" cornerRadius="0"/>
+					   icon="@Embed(source='/weave/resources/images/zoomMode.png')"
+					   fillAlphas="[1,1]" fillColors="{zoomModeButton.selected ? [0xFF8080, 0xFF8080] : [0x808080, 0x808080]}"
+					   alpha="{zoomModeButton.selected ? 1 : 0.5}"
+					   width="17" height="17" 
+					   toggle="true"
+					   toolTip="Select this mode to enable zooming on the map using the mouse to create a box around the area you want to zoom into."
+					   click="handleMouseModeChange(event)" cornerRadius="0"/>
 		</mx:HBox>
 	</mx:VBox>
-	
+
 
 	<ui:ControlPanel>
 		<mx:VBox id="attributesPanel" label="Map Layers">
@@ -639,7 +643,7 @@
 				<mx:Button label="Add Geometry" click="addGeomLayer();" toolTip="Add a layer of polygons, lines, or points that can be colored according to the data"/>
 				<mx:Button label="Add Labels" click="addLabelLayer();" toolTip="Add labels to the selected geometry layer"/>
 			</mx:HBox>
-			
+
 			<!--<mx:DataGrid dataProvider="{_layerNames.reverse()}">
 			<mx:columns>
 			<mx:DataGridColumn headerText="Visible"/>
@@ -649,7 +653,7 @@
 			<mx:DataGridColumn headerText="Remove"/>
 			</mx:columns>
 			</mx:DataGrid>-->
-			
+
 			<managers:PlotLayerEditor id="layerEditor" creationComplete="layerEditor.visualization = visualization"/>
 			<mx:HBox width="100%" verticalAlign="middle">
 				<ui:DynamicColumnComponent label="color" showLinkControl="false" visTool="{this}" creationComplete="(event.target as DynamicColumnComponent).dynamicObject = colorColumn"/>
@@ -674,7 +678,7 @@
 					</mx:HBox>
 				</mx:VBox>
 			</mx:HBox>
-			<mx:HBox verticalAlign="center" horizontalAlign="center">
+			<mx:HBox verticalAlign="middle" horizontalAlign="center">
 				<mx:Label text="Projection"/> 
 				<ui:CustomComboBox id="projComboBox"
 								   dataProvider="{_projComboBoxData}"
@@ -705,7 +709,7 @@
 						 toolTip="This option enables the mouse mode buttons"
 						 creationComplete="linkBindableProperty(showMouseModeControls,event.target,'selected')"/>
 			<mx:HBox>
-				<mx:Label text="Mouse wheel scroll factor:" />
+				<mx:Label text="Zoom factor for mouse wheel and zoom buttons:" />
 				<mx:NumericStepper maximum="10" minimum="1" stepSize=".25" creationComplete="linkBindableProperty(this.visualization.zoomFactor, event.target, 'value')"/>
 			</mx:HBox>
 		</mx:VBox>
@@ -721,7 +725,7 @@
 			</ui:Indent>
 			<ui:LinkableObjectList id="visibleScaleRangesList"
 								   width="100%" height="100%"
-								   initialize="visibleScaleRangesList.hashMap = visualization.layers"
+								   initialize="visibleScaleRangesList.hashMap = visualization.plotManager.layerSettings"
 								   borderStyle="none"
 								   paddingLeft="0">
 				<ui:itemRenderer>
@@ -730,71 +734,72 @@
 							<mx:Script>
 								<![CDATA[
 									import mx.events.SliderEvent;
-									
+
 									import weave.api.core.ILinkableObject;
 									import weave.api.primitives.IBounds2D;
 									import weave.core.CallbackJuggler;
 									import weave.core.UIUtils;
 									import weave.editors.managers.LayerListComponent;
 									import weave.utils.ZoomUtils;
-									import weave.visualization.layers.PlotLayer;
-									import weave.visualization.layers.SelectablePlotLayer;
+									import weave.visualization.layers.LayerSettings;
+									import weave.visualization.layers.PlotManager;
+
 									[Bindable] private var layerName:String;
+
 									private var currentlyUpdatingLayerZoomRangeSlider:Boolean = false;
-									
-									private function handleLayerChange():void
+
+									private function get vm():PlotManager { return outerDocument.visualization.plotManager; }
+									private function get settings():LayerSettings { return data as LayerSettings; }
+
+									override public function set data(value:Object):void
 									{
-										if (!data)
+										super.data = settingsJuggler.target = value as LayerSettings;
+									}
+
+									private const settingsJuggler:CallbackJuggler = new CallbackJuggler(this, handleSettingsChange, true);
+									private function handleSettingsChange():void
+									{
+										if (!settings)
 											return;
-										
-										var fullDataBounds:IBounds2D = outerDocument.visualization.fullDataBounds;
-										var area:Number = fullDataBounds.getArea();
+
+										layerName = vm.layerSettings.getName(settings);
+										var area:Number = vm.fullDataBounds.getArea();
 										if (!isNaN(area))
 										{
-											layerName = outerDocument.visualization.layers.getName(data as ILinkableObject);
-											
-											var minScreenSize:Number = outerDocument.visualization.minScreenSize.value;
-											
 											var minZoomLevel:Number = ZoomUtils.getZoomLevelFromScale(
-												fullDataBounds, minScreenSize, data.minVisibleScale.value
-											);
-											
+												vm.fullDataBounds, vm.minScreenSize.value, settings.minVisibleScale.value
+												);
+
 											var maxZoomLevel:Number = ZoomUtils.getZoomLevelFromScale(
-												fullDataBounds, minScreenSize, data.maxVisibleScale.value
-											);
-											
+												vm.fullDataBounds, vm.minScreenSize.value, settings.maxVisibleScale.value
+												);
+
 											currentlyUpdatingLayerZoomRangeSlider = true;
 											layerZoomRangeSlider.values = [minZoomLevel, maxZoomLevel];
 											currentlyUpdatingLayerZoomRangeSlider = false;
 										}
 									}
-									
-									private const layerJuggler:CallbackJuggler = new CallbackJuggler(this, handleLayerChange, true);
-									override public function set data(value:Object):void
-									{
-										super.data = layerJuggler.target = value as SelectablePlotLayer || value as PlotLayer;
-									}
+
 									private function handleScaleSliderChange(event:SliderEvent):void
 									{
 										if (data && !currentlyUpdatingLayerZoomRangeSlider && UIUtils.hasFocus(layerZoomRangeSlider))
 										{
-											var fullDataBounds:IBounds2D = outerDocument.visualization.fullDataBounds;
-											var minScreenSize:Number = outerDocument.visualization.minScreenSize.value;
+											var minScreenSize:Number = vm.minScreenSize.value;
 											var minVisibleZoomLevel:Number = layerZoomRangeSlider.values[0];
 											var maxVisibleZoomLevel:Number = layerZoomRangeSlider.values[1];
-											
+
 											data.minVisibleScale.value = ZoomUtils.getScaleFromZoomLevel(
-												fullDataBounds, minScreenSize, minVisibleZoomLevel
-											);
-											
+												vm.fullDataBounds, minScreenSize, minVisibleZoomLevel
+												);
+
 											data.maxVisibleScale.value = ZoomUtils.getScaleFromZoomLevel(
-												fullDataBounds, minScreenSize, maxVisibleZoomLevel
-											);
+												vm.fullDataBounds, minScreenSize, maxVisibleZoomLevel
+												);
 										}
 									}
 								]]>
 							</mx:Script>
-							
+
 							<mx:HSlider id="layerZoomRangeSlider"
 										liveDragging="true"
 										thumbCount="2"

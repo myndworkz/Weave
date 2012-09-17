@@ -19,8 +19,6 @@
 
 package weave.visualization.plotters
 {
-	import flash.debugger.enterDebugger;
-	import flash.display.BitmapData;
 	import flash.utils.Dictionary;
 	
 	import weave.api.core.ILinkableObject;
@@ -28,15 +26,14 @@ package weave.visualization.plotters
 	import weave.api.data.IQualifiedKey;
 	import weave.api.getCallbackCollection;
 	import weave.api.newDisposableChild;
-	import weave.api.primitives.IBounds2D;
 	import weave.api.registerLinkableChild;
+	import weave.api.ui.IPlotTask;
 	import weave.core.LinkableBoolean;
 	import weave.core.LinkableNumber;
 	import weave.data.AttributeColumns.AlwaysDefinedColumn;
 	import weave.data.AttributeColumns.DynamicColumn;
 	import weave.data.KeySets.KeySet;
 	import weave.utils.ColumnUtils;
-	import weave.visualization.plotters.styles.SolidFillStyle;
 	
 	/**
 	 * ScatterPlotPlotter
@@ -65,14 +62,16 @@ package weave.visualization.plotters
 			_keySet.replaceKeys(keys);
 			setKeySource(_keySet);
 		}
-
-		override public function drawPlot(recordKeys:Array, dataBounds:IBounds2D, screenBounds:IBounds2D, destination:BitmapData):void
+		
+		override public function drawPlotAsyncIteration(task:IPlotTask):Number
 		{
-			if (sortKeys == null)
-				sortKeys = ColumnUtils.generateSortFunction([radiusColumn, colorColumn, xColumn, yColumn], [true, false, false, false]);
-			recordKeys.sort(sortKeys);
-			
-			super.drawPlot(recordKeys, dataBounds, screenBounds, destination);
+			if (task.iteration == 0)
+			{
+				if (sortKeys == null)
+					sortKeys = ColumnUtils.generateSortFunction([radiusColumn, colorColumn, xColumn, yColumn], [true, false, false, false]);
+				task.recordKeys.sort(sortKeys);
+			}
+			return super.drawPlotAsyncIteration(task);
 		}
 		
 		/**
@@ -94,8 +93,8 @@ package weave.visualization.plotters
 		public function get maxScreenRadius():LinkableNumber { return _internalCirclePlotter.maxScreenRadius; }
 		public function get xColumn():DynamicColumn { return _internalCirclePlotter.dataX; }
 		public function get yColumn():DynamicColumn { return _internalCirclePlotter.dataY; }
-		public function get alphaColumn():AlwaysDefinedColumn { return (_internalCirclePlotter.fillStyle.internalObject as SolidFillStyle).alpha; }
-		public function get colorColumn():AlwaysDefinedColumn { return (_internalCirclePlotter.fillStyle.internalObject as SolidFillStyle).color; }
+		public function get alphaColumn():AlwaysDefinedColumn { return _internalCirclePlotter.fill.alpha; }
+		public function get colorColumn():AlwaysDefinedColumn { return _internalCirclePlotter.fill.color; }
 		public function get radiusColumn():DynamicColumn { return _internalCirclePlotter.screenRadius; }
 		public function get zoomToSubset():LinkableBoolean { return _internalCirclePlotter.zoomToSubset; }
 		

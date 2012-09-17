@@ -29,9 +29,10 @@ package weave.visualization.plotters
 	import weave.api.data.IColumnStatistics;
 	import weave.api.data.IQualifiedKey;
 	import weave.api.linkSessionState;
-	import weave.api.newDisposableChild;
+	import weave.api.newLinkableChild;
 	import weave.api.primitives.IBounds2D;
 	import weave.api.registerLinkableChild;
+	import weave.api.ui.IPlotTask;
 	import weave.core.LinkableNumber;
 	import weave.data.AttributeColumns.BinnedColumn;
 	import weave.data.AttributeColumns.DynamicColumn;
@@ -40,7 +41,6 @@ package weave.visualization.plotters
 	import weave.data.AttributeColumns.StringLookupColumn;
 	import weave.primitives.ColorRamp;
 	import weave.utils.BitmapText;
-	import weave.utils.ColumnUtils;
 	import weave.utils.LinkableTextFormat;
 	import weave.visualization.plotters.styles.DynamicFillStyle;
 	import weave.visualization.plotters.styles.DynamicLineStyle;
@@ -83,7 +83,7 @@ package weave.visualization.plotters
 		{
 			(fillStyle.internalObject as SolidFillStyle).color.defaultValue.setSessionState(0x808080);
 			
-			_beginRadians = newDisposableChild(this, EquationColumn);
+			_beginRadians = newLinkableChild(this, EquationColumn);
 			_beginRadians.equation.value = "0.5 * PI + getRunningTotal(spanRadians) - getNumber(spanRadians)";
 			_spanRadians = _beginRadians.requestVariable("spanRadians", EquationColumn, true);
 			_spanRadians.equation.value = "getNumber(binSize) / getSum(binSize) * 2 * PI";
@@ -103,20 +103,21 @@ package weave.visualization.plotters
 		/**
 		 * This draws the histogram bins that a list of record keys fall into.
 		 */
-		override public function drawPlot(recordKeys:Array, dataBounds:IBounds2D, screenBounds:IBounds2D, destination:BitmapData):void
+		override public function drawPlotAsyncIteration(task:IPlotTask):Number
 		{
-			// convert record keys to bin keys
-			// save a mapping of each bin key found to a value of true
-			var binKeyMap:Dictionary = new Dictionary();
-			for (var i:int = 0; i < recordKeys.length; i++)
-				binKeyMap[ _binLookup.getStringLookupKeyFromInternalColumnKey(recordKeys[i]) ] = true;
-			
-			var binKeys:Array = [];
-			for (var binQKey:* in binKeyMap)
-				binKeys.push(binQKey);
-			
-			// draw the bins
-			super.drawPlot(binKeys, dataBounds, screenBounds, destination);
+			if (task.iteration == 0)
+			{
+				// convert record keys to bin keys
+				// save a mapping of each bin key found to a value of true
+				var binKeyMap:Dictionary = new Dictionary();
+				for (var i:int = 0; i < task.recordKeys.length; i++)
+					binKeyMap[ _binLookup.getStringLookupKeyFromInternalColumnKey(task.recordKeys[i]) ] = true;
+				
+				var binKeys:Array = [];
+				for (var binQKey:* in binKeyMap)
+					binKeys.push(binQKey);
+			}
+			return super.drawPlotAsyncIteration(task);
 		}
 		
 		override protected function addRecordGraphicsToTempShape(recordKey:IQualifiedKey, dataBounds:IBounds2D, screenBounds:IBounds2D, tempShape:Shape):void
