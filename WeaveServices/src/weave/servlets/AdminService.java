@@ -88,7 +88,6 @@ public class AdminService extends GenericServlet
 	
 	public AdminService()
 	{
-		System.out.println("AdminService()");
 	}
 	
 	/**
@@ -1087,32 +1086,6 @@ public class AdminService extends GenericServlet
 		{
 			throw new RemoteException(e.getMessage());
 		}
-		
-		/*
-		 * Old code
-		 * 
-			try
-			{
-				String csvData = org.apache.commons.io.FileUtils.readFileToString(new File(uploadPath, csvFile));
-				// Read first line only (header line).
-				int index = csvData.indexOf("\r");
-				int index2 = csvData.indexOf("\n");
-				if (index2 < index && index2 >= 0)
-					index = index2;
-				String header = index < 0 ? csvData : csvData.substring(0, index);
-				csvData = null; // don't need this in memory anymore
-				String[][] rows = CSVParser.defaultParser.parseCSV(header);
-				headerLine = rows[0];
-			}
-			catch (FileNotFoundException e)
-			{
-				throw new RemoteException(e.getMessage());
-			}
-			catch (Exception e)
-			{
-				throw new RemoteException(e.getMessage());
-			}
-		*/
 
 		return headerLine;
 	}
