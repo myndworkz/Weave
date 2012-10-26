@@ -272,7 +272,7 @@
 								</mx:HBox>
 							</mx:VBox>
 							
-							<mx:VBox borderStyle="solid" horizontalAlign="middle" verticalGap="0" enabled="{!useImagesCheck.selected || fixedImageSizeCheck.selected}"
+							<mx:VBox borderStyle="solid" horizontalAlign="center" verticalGap="0" enabled="{!useImagesCheck.selected || fixedImageSizeCheck.selected}"
 									 paddingLeft="1" paddingBottom="1" paddingRight="1" paddingTop="1">
 								<mx:Label text="{lang('Icon size:')}"/>
 								<mx:NumericStepper 	id="iconSize" 
@@ -280,7 +280,7 @@
 													minimum="0.2" maximum="60"
 													width="50"/>
 							</mx:VBox>
-							<mx:VBox borderStyle="solid" horizontalAlign="middle" verticalGap="0"
+							<mx:VBox borderStyle="solid" horizontalAlign="center" verticalGap="0"
 									 paddingLeft="1" paddingBottom="1" paddingRight="1" paddingTop="1">
 								<mx:CheckBox id="useImagesCheck" label="{lang('Enable Images')}" click="handleGeomPlotterImageToggle()"/>
 								<mx:TextInput id="imageURL" creationComplete="EventUtils.addDelayedEventCallback(event.target, Event.CHANGE, handleGeomPlotterImageInput)" enabled="{useImagesCheck.selected}"/>
@@ -307,7 +307,7 @@
 						import weave.Weave;
 						import weave.api.core.ILinkableHashMap;
 						import weave.api.core.ILinkableObject;
-						import weave.api.data.AttributeColumnMetadata;
+						import weave.api.data.ColumnMetadata;
 						import weave.api.getCallbackCollection;
 						import weave.api.linkBindableProperty;
 						import weave.api.ui.IPlotter;
@@ -332,7 +332,6 @@
 						import weave.visualization.layers.LayerSettings;
 						import weave.visualization.layers.PlotManager;
 						import weave.visualization.plotters.CirclePlotter;
-						import weave.visualization.plotters.DynamicPlotter;
 						import weave.visualization.plotters.GeometryLabelPlotter;
 						import weave.visualization.plotters.GeometryPlotter;
 						import weave.visualization.plotters.SingleImagePlotter;
@@ -564,7 +563,7 @@
 								var geomPlotter:GeometryPlotter = plotter as GeometryPlotter;
 								
 								// get the source projection to be used in the label
-								projString = geomPlotter.geometryColumn.internalDynamicColumn.getMetadata(AttributeColumnMetadata.PROJECTION);
+								projString = geomPlotter.geometryColumn.internalDynamicColumn.getMetadata(ColumnMetadata.PROJECTION);
 								if (projString != null)
 									projLabel = ' (' + projString + ')';
 								

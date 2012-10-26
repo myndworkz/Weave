@@ -23,8 +23,8 @@ package weave.utils
 	
 	/**
 	 * This class contains static functions that manipulate Vectors and Arrays.
-	 * Functions with <code>*</code> as parameter types support both Vector and Array.
-	 * Vector.<*> is not used because it causes compiler errors.
+	 * Functions with * as parameter types support both Vector and Array.
+	 * Vector.&lt;*&rt; is not used because it causes compiler errors.
 	 * 
 	 * @author adufilie
 	 */
@@ -45,9 +45,8 @@ package weave.utils
 		/**
 		 * Efficiently removes duplicate adjacent items in a pre-sorted Array (or Vector).
 		 * @param vector The sorted Array (or Vector)
-		 * @return A pointer to the same Array (or Vector)
 		 */
-		public static function removeDuplicatesFromSortedArray(vector:*):*
+		public static function removeDuplicatesFromSortedArray(vector:*):void
 		{
 			var iEnd:int = vector.length;
 			var iPrevWrite:int = 0; // always keep first item 
@@ -60,14 +59,12 @@ package weave.utils
 			}
 			if (iEnd > 0)
 				vector.length = iPrevWrite + 1;
-			return vector;
 		}
 		/**
 		 * randomizes the order of the elements in the vector in O(n) time by modifying the given array.
 		 * @param the vector to randomize
-		 * @return the input vector
 		 */
-		public static function randomSort(vector:*):*
+		public static function randomSort(vector:*):void
 		{
 			var ptr:*;
 			var j:int;
@@ -82,7 +79,6 @@ package weave.utils
 				vector[i] = vector[j];
 				vector[j] = ptr;
 			}
-			return vector;
 		}
 		
 		/**
@@ -91,7 +87,7 @@ package weave.utils
 		 * @param firstIndex The index of the first element in the list to partition.
 		 * @param lastIndex The index of the last element in the list to partition.
 		 * @param pivotIndex The index of an element to use as a pivot when partitioning.
-		 * @param compareFunction A function that takes two array elements a,b and returns -1 if a<b, 1 if a>b, or 0 if a==b.
+		 * @param compareFunction A function that takes two array elements a,b and returns -1 if a&lt;b, 1 if a&gt;b, or 0 if a==b.
 		 * @return The index the pivot element was moved to during the execution of the function.
 		 */
 		private static function partition(list:*, firstIndex:int, lastIndex:int, pivotIndex:int, compareFunction:Function):int
@@ -135,7 +131,7 @@ package weave.utils
 		private static function testPartition():void
 		{
 			var list:Array = [3,7,5,8,2];
-			var pivotIndex:int = partition(list, 0, list.length - 1, list.length/2, ObjectUtil.compare);
+			var pivotIndex:int = partition(list, 0, list.length - 1, list.length/2, AsyncSort.defaultCompare);
 			
 			for (var i:int = 0; i < list.length; i++)
 				if (i < pivotIndex != list[i] < list[pivotIndex])
@@ -145,7 +141,7 @@ package weave.utils
 		/**
 		 * See http://en.wikipedia.org/wiki/Quick_select#Partition-based_general_selection_algorithm
 		 * @param list An Array or Vector to be re-organized.
-		 * @param compareFunction A function that takes two array elements a,b and returns -1 if a<b, 1 if a>b, or 0 if a==b.
+		 * @param compareFunction A function that takes two array elements a,b and returns -1 if a&lt;b, 1 if a&gt;b, or 0 if a==b.
 		 * @param firstIndex The index of the first element in the list to calculate a median from.
 		 * @param lastIndex The index of the last element in the list to calculate a median from.
 		 * @return The index the median element.

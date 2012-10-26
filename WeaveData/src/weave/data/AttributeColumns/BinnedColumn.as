@@ -22,7 +22,7 @@ package weave.data.AttributeColumns
 	import flash.utils.Dictionary;
 
 	import weave.api.WeaveAPI;
-	import weave.api.data.AttributeColumnMetadata;
+	import weave.api.data.ColumnMetadata;
 	import weave.api.data.IAttributeColumn;
 	import weave.api.data.IBinningDefinition;
 	import weave.api.data.IPrimitiveColumn;
@@ -45,7 +45,7 @@ package weave.data.AttributeColumns
 		{
 			binningDefinition.requestLocalObject(SimpleBinningDefinition, false);
 		}
-
+		
 		/**
 		 * This number overrides the min,max metadata values.
 		 * @param propertyName The name of a metadata property.
@@ -55,15 +55,15 @@ package weave.data.AttributeColumns
 		{
 			switch (propertyName)
 			{
-				case AttributeColumnMetadata.MIN:
+				case ColumnMetadata.MIN:
 					return numberOfBins > 0 ? "0" : null;
-				case AttributeColumnMetadata.MAX:
+				case ColumnMetadata.MAX:
 					var binCount:int = numberOfBins;
 					return binCount > 0 ? String(binCount - 1) : null;
 			}
 			return super.getMetadata(propertyName);
 		}
-
+		
 		/**
 		 * This defines how to generate the bins for this BinnedColumn.
 		 * This is used to generate the derivedBins.
@@ -80,12 +80,12 @@ package weave.data.AttributeColumns
 			validateBins();
 			return _derivedBins;
 		}
-
+		
 		private const _derivedBins:BinClassifierCollection = newLinkableChild(this, BinClassifierCollection); // returned by public getter
-		private var _binNames:Array = null; // maps a bin index to a bin name
-		private var _keyToBinIndexMap:Dictionary = null; // maps a record key to a bin index
-		private var _binnedKeysArray:Array = null; // maps a bin index to a list of keys in that bin
-		private var _binnedKeysMap:Object = null; // maps a bin name to a list of keys in that bin
+		private var _binNames:Array = []; // maps a bin index to a bin name
+		private var _keyToBinIndexMap:Dictionary = new Dictionary(); // maps a record key to a bin index
+		private var _binnedKeysArray:Array = []; // maps a bin index to a list of keys in that bin
+		private var _binnedKeysMap:Object = {}; // maps a bin name to a list of keys in that bin
 		private var _largestBinSize:uint = 0;
 		private var _prevTriggerCounter:uint;
 

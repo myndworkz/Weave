@@ -26,7 +26,7 @@ package weave.data.AttributeColumns
 	import mx.utils.StringUtil;
 	
 	import weave.api.WeaveAPI;
-	import weave.api.data.AttributeColumnMetadata;
+	import weave.api.data.ColumnMetadata;
 	import weave.api.data.DataTypes;
 	import weave.api.data.IPrimitiveColumn;
 	import weave.api.data.IQualifiedKey;
@@ -34,6 +34,7 @@ package weave.data.AttributeColumns
 	import weave.compiler.Compiler;
 	import weave.compiler.StandardLib;
 	import weave.core.StageUtils;
+	import weave.utils.AsyncSort;
 	import weave.utils.VectorUtils;
 	
 	/**
@@ -55,7 +56,7 @@ package weave.data.AttributeColumns
 		
 		override public function getMetadata(propertyName:String):String
 		{
-			if (propertyName == AttributeColumnMetadata.DATA_TYPE)
+			if (propertyName == ColumnMetadata.DATA_TYPE)
 				return DataTypes.STRING;
 			return super.getMetadata(propertyName);
 		}
@@ -125,12 +126,12 @@ package weave.data.AttributeColumns
 			_reportedDuplicate = false;
 			
 			// compile the number format function from the metadata
-			var numberFormat:String = getMetadata(AttributeColumnMetadata.NUMBER);
+			var numberFormat:String = getMetadata(ColumnMetadata.NUMBER);
 			if (numberFormat)
 			{
 				try
 				{
-					_stringToNumberFunction = compiler.compileToFunction(numberFormat, null, true, false, [AttributeColumnMetadata.STRING]);
+					_stringToNumberFunction = compiler.compileToFunction(numberFormat, null, true, false, [ColumnMetadata.STRING]);
 				}
 				catch (e:Error)
 				{
@@ -139,12 +140,12 @@ package weave.data.AttributeColumns
 			}
 			
 			// compile the string format function from the metadata
-			var stringFormat:String = getMetadata(AttributeColumnMetadata.STRING);
+			var stringFormat:String = getMetadata(ColumnMetadata.STRING);
 			if (stringFormat)
 			{
 				try
 				{
-					_numberToStringFunction = compiler.compileToFunction(stringFormat, null, true, false, [AttributeColumnMetadata.NUMBER]);
+					_numberToStringFunction = compiler.compileToFunction(stringFormat, null, true, false, [ColumnMetadata.NUMBER]);
 				}
 				catch (e:Error)
 				{
@@ -223,7 +224,7 @@ package weave.data.AttributeColumns
 		private function _iterate2():Number
 		{
 			// sort unique strings previously listed
-			_uniqueStrings.sort(Array.CASEINSENSITIVE);
+			AsyncSort.sortImmediately(_uniqueStrings, AsyncSort.compareCaseInsensitive);
 			return 1;
 		}
 		private function _iterate3():Number
@@ -270,7 +271,7 @@ package weave.data.AttributeColumns
 		// find the closest string value at a given normalized value
 		public function deriveStringFromNumber(number:Number):String
 		{
-			if (getMetadata(AttributeColumnMetadata.NUMBER))
+			if (getMetadata(ColumnMetadata.NUMBER))
 			{
 				if (_numberToStringFunction != null)
 					return _numberToStringFunction(number);
@@ -306,7 +307,7 @@ package weave.data.AttributeColumns
 			
 			if (dataType == IQualifiedKey)
 			{
-				var type:String = _metadata.attribute(AttributeColumnMetadata.DATA_TYPE);
+				var type:String = _metadata.attribute(ColumnMetadata.DATA_TYPE);
 				if (!type)
 					type = DataTypes.STRING;
 				return WeaveAPI.QKeyManager.getQKey(type, string);
@@ -317,7 +318,7 @@ package weave.data.AttributeColumns
 
 		override public function toString():String
 		{
-			return getQualifiedClassName(this).split("::")[1] + '{recordCount: '+keys.length+', keyType: "'+getMetadata('keyType')+'", title: "'+getMetadata('title')+'"}';
+			return debugId(this) + '{recordCount: '+keys.length+', keyType: "'+getMetadata('keyType')+'", title: "'+getMetadata('title')+'"}';
 		}
 	}
 }

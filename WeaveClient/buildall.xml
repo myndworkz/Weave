@@ -17,6 +17,18 @@
 		</classpath>
 	</taskdef>
 
+	<!-- This property must be defined here. Note the use of forward slashes '/' and
+		the slash required at the end -->
+	<property name="WEAVE_DESTROOT" value="${basedir}/ROOT"/>
+	<!-- This property's value is defined as an environment variable -->
+	<property name="FLEX_HOME" value="${env.FLEX_HOME}"/>
+	<property name="FLEX_LIBS" value="${FLEX_HOME}/frameworks/libs"/>
+	<property name="FRAMEWORK_SWF" value="framework_4.5.1.21489.swf"/>
+	<property name="RPC_SWF" value="rpc_4.5.1.21328.swf"/>
+	<property name="SPARK_SWF" value="spark_4.5.1.21489.swf"/>
+        <property name="MX_SWF" value="mx_4.5.1.21489.swf"/>
+        <property name="TEXTLAYOUT_SWF" value="textLayout_2.0.0.232.swf"/>
+    <taskdef resource="flexTasks.tasks" classpath="${FLEX_HOME}/ant/lib/flexTasks.jar"/>
 	<taskdef name="html-wrapper" classname="flex.ant.HtmlWrapperTask" classpath="${FLEX_HOME}/ant/lib/flexTasks.jar" />
 
 	<!-- These are the projects -->
@@ -24,34 +36,36 @@
 	<property name="API" value="WeaveAPI"/>
 	<property name="CORE" value="WeaveCore"/>
 	<property name="DATA" value="WeaveData"/>
+	<property name="UISPARK" value="WeaveUISpark"/>
 	<property name="UI" value="WeaveUI"/>
+        <property name="FONTS" value="WeaveFonts"/>
 	<property name="CLIENT" value="WeaveClient"/>
 	<property name="ADMIN" value="WeaveAdmin"/>
 	<property name="SERVICES" value="WeaveServices"/>
 
 	<target name="dist" depends="build">
 		<zip destfile="weave.zip">
-			<zipfileset dir="${WEAVE_DESTROOT}" prefix="ROOT"/>
-			<zipfileset file="${basedir}/WeaveServices.war"/>
+		    <zipfileset dir="${WEAVE_DESTROOT}" prefix="ROOT"/>
+		    <zipfileset file="${basedir}/WeaveServices.war"/>
 		</zip>
 	</target>
-
+	
 	<target name="deploy_war">
 		<zip destfile="weave.zip">
-			<zipfileset dir="${WEAVE_DESTROOT}" prefix="ROOT"/>
-			<zipfileset file="${basedir}/WeaveServices.war"/>
-		</zip>
+		    <zipfileset dir="${WEAVE_DESTROOT}" prefix="ROOT"/>
+		    <zipfileset file="${basedir}/WeaveServices.war"/>
+	    </zip>
 	</target>
-
+	
 	<target name="install" depends="build">
 		<!-- This target will install the files to WEAVE_DOCROOT. -->
 		<copy todir="${WEAVE_DOCROOT}">
-			<fileset dir="${WEAVE_DESTROOT}">
-				<include name="*.swf"/>
-				<include name="*.html"/>
-				<include name="*.js"/>
-				<include name="*.css"/>
-			</fileset>
+		    <fileset dir="${WEAVE_DESTROOT}">
+			<include name="*.swf"/>
+			<include name="*.html"/>
+			<include name="*.js"/>
+			<include name="*.css"/>
+		    </fileset>
 		</copy>
 	</target>
 
@@ -165,124 +179,69 @@
 
 	<!-- This target will extract the swf files from the swc archives
 		and extract them to the WEAVE_DESTROOT -->
-	<target name="build" depends="client, admin, ui, data, core, api, services">
+	<target name="build" depends="client, admin, uispark, ui, data, core, api, services">
 		<mkdir dir="${WEAVE_DESTROOT}"/>
 		<ant dir="${basedir}/${CLIENT}" target="build"/>
 		<extract_swc swc="${basedir}/${API}/bin/${API}.swc" rsl="${API}.swf"/>
 		<extract_swc swc="${basedir}/${CORE}/bin/${CORE}.swc" rsl="${CORE}.swf"/>
 		<extract_swc swc="${basedir}/${DATA}/bin/${DATA}.swc" rsl="${DATA}.swf"/>
+		<extract_swc swc="${basedir}/${UISPARK}/bin/${UISPARK}.swc" rsl="${UISPARK}.swf"/>
 		<extract_swc swc="${basedir}/${UI}/bin/${UI}.swc" rsl="${UI}.swf"/>
-
-		<copy file="${basedir}/${CLIENT}/bin/${CLIENT}.swf" tofile="${WEAVE_DESTROOT}/weave.swf"/>
-		<copy file="${basedir}/${ADMIN}/bin/${ADMIN}.swf" tofile="${WEAVE_DESTROOT}/AdminConsole.swf"/>
+                <copy file="${basedir}/${CLIENT}/swf/${FONTS}.swf" tofile="${WEAVE_DESTROOT}/${FONTS}.swf"/>
+		<copy file="${basedir}/${CLIENT}/bin/weave.swf" tofile="${WEAVE_DESTROOT}/weave.swf"/>
+		<copy file="${basedir}/${ADMIN}/bin/AdminConsole.swf" tofile="${WEAVE_DESTROOT}/AdminConsole.swf"/>
 		<copy file="${basedir}/${SERVICES}/build/jar/${SERVICES}.war" tofile="${basedir}/${SERVICES}.war"/>
-		<!-- CSTEF - 01-06-12 - Had to hard code these values, they are different from the previous. -->
-		<copy file="${FLEX_HOME}/frameworks/rsls/framework_3.6.0.21751.swf" tofile="${WEAVE_DESTROOT}/framework.swf"/>
-		<copy file="${FLEX_HOME}/frameworks/rsls/rpc_3.6.0.16995.swf" tofile="${WEAVE_DESTROOT}/rpc.swf"/>
+		<copy file="${FLEX_HOME}/frameworks/rsls/${FRAMEWORK_SWF}" tofile="${WEAVE_DESTROOT}/framework.swf"/>
+		<copy file="${FLEX_HOME}/frameworks/rsls/${RPC_SWF}" tofile="${WEAVE_DESTROOT}/rpc.swf"/>
+                <copy file="${FLEX_HOME}/frameworks/rsls/${SPARK_SWF}" tofile="${WEAVE_DESTROOT}/spark.swf"/>
+                <copy file="${FLEX_HOME}/frameworks/rsls/${MX_SWF}" tofile="${WEAVE_DESTROOT}/mx.swf"/>
+                <copy file="${FLEX_HOME}/frameworks/rsls/${TEXTLAYOUT_SWF}" tofile="${WEAVE_DESTROOT}/textLayout.swf"/>
 		<antcall target="admin_wrapper"/>
 		<antcall target="client_wrapper"/>
 	</target>
 
 	<!-- These targets will build each project -->
-	<target name="client" depends="ui, data, core, api, check_client" unless="client_no_changes">
-		<ant dir="${basedir}/${CLIENT}" target="build"/>
+	<target name="api">
+		<buildproject targetproject="${API}" targetfileext="swc"/>
 	</target>
-	<target name="admin" depends="ui, data, core, api, check_admin" unless="admin_no_changes">
-		<ant dir="${basedir}/${ADMIN}" target="build"/>
+	<target name="core" depends="api">
+		<buildproject targetproject="${CORE}" targetfileext="swc"/>
 	</target>
-	<target name="api" depends="check_api" unless="api_no_changes">
-		<ant dir="${basedir}/${API}" target="build"/>
+	<target name="data" depends="core">
+		<buildproject targetproject="${DATA}" targetfileext="swc"/>
 	</target>
-	<target name="core" depends="api, check_core" unless="core_no_changes">
-		<ant dir="${basedir}/${CORE}" target="build"/>
+	<target name="uispark" depends="data">
+		<buildproject targetproject="${UISPARK}" targetfileext="swc"/>
 	</target>
-	<target name="data" depends="core, api, check_data" unless="data_no_changes">
-		<ant dir="${basedir}/${DATA}" target="build"/>
+	<target name="ui" depends="uispark">
+		<buildproject targetproject="${UI}" targetfileext="swc"/>
 	</target>
-	<target name="ui" depends="data, core, api, check_ui" unless="ui_no_changes">
-		<ant dir="${basedir}/${UI}" target="build"/>
+	<target name="client" depends="ui">
+		<buildproject targetproject="${CLIENT}" targetfileext="swf"/>
+	</target>
+	<target name="admin" depends="ui">
+		<buildproject targetproject="${ADMIN}" targetfileext="swf"/>
 	</target>
 	<target name="services">
-		<ant dir="${basedir}/WeaveServices" target="dist"/>
+	    <ant dir="${basedir}/WeaveServices" target="dist"/>
 	</target>
 
 	<!-- This target calls the clean targets of each project's build file -->
 	<target name="clean">
 		<echo message="Cleaning all projects..."/>
 		<delete quiet="false" includeemptydirs="true" dir="${WEAVE_DESTROOT}">
-			<fileset file="${basedir}/WeaveServices.war"/>
-			<fileset file="${basedir}/weave.zip"/>
+		    <fileset file="${basedir}/WeaveServices.war"/>
+		    <fileset file="${basedir}/weave.zip"/>
 		</delete>
-		<delete file="${basedir}/WeaveServices.war"/>
 		<ant dir="${basedir}/${CLIENT}" target="clean" />
 		<ant dir="${basedir}/${ADMIN}" target="clean" />
 		<ant dir="${basedir}/${API}" target="clean" />
 		<ant dir="${basedir}/${CORE}" target="clean" />
 		<ant dir="${basedir}/${DATA}" target="clean" />
+		<ant dir="${basedir}/${UISPARK}" target="clean" />
 		<ant dir="${basedir}/${UI}" target="clean" />
 		<ant dir="${basedir}/${SERVICES}" target="clean" />
 	</target>
-
-
-	<!-- These targets set the properties ${project name}_no_changes if the target for each
-		project is more up-to-date than its source files or dependencies -->
-	<target name="check_api">
-		<echo message="Checking status of ${API}..."/>
-		<uptodate property="api_no_changes" targetfile="${basedir}/${API}/bin/${API}.swc">
-			<srcfiles dir="${basedir}/${API}" includes="**/*.as"/>
-			<srcfiles dir="${basedir}/${API}" includes="**/*.mxml"/>
-		</uptodate>
-	</target>
-	<target name="check_core">
-		<echo message="Checking status of ${CORE}..."/>
-		<uptodate property="core_no_changes" targetfile="${basedir}/${CORE}/bin/${CORE}.swc">
-			<srcfiles dir="${basedir}/${CORE}" includes="**/*.as"/>
-			<srcfiles dir="${basedir}/${CORE}" includes="**/*.mxml"/>
-			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
-		</uptodate>
-	</target>
-	<target name="check_data">
-		<echo message="Checking status of ${DATA}..."/>
-		<uptodate property="data_no_changes" targetfile="${basedir}/${DATA}/bin/${DATA}.swc">
-			<srcfiles dir="${basedir}/${DATA}" includes="**/*.as"/>
-			<srcfiles dir="${basedir}/${DATA}" includes="**/*.mxml"/>
-			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
-			<srcfiles dir="${basedir}/${CORE}/bin" includes="${CORE}.swc"/>
-		</uptodate>
-	</target>
-	<target name="check_ui">
-		<echo message="Checking status of ${UI}..."/>
-		<uptodate property="ui_no_changes" targetfile="${basedir}/${UI}/bin/${UI}.swc">
-			<srcfiles dir="${basedir}/${UI}" includes="**/*.as"/>
-			<srcfiles dir="${basedir}/${UI}" includes="**/*.mxml"/>
-			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
-			<srcfiles dir="${basedir}/${CORE}/bin" includes="${CORE}.swc"/>
-			<srcfiles dir="${basedir}/${DATA}/bin" includes="${DATA}.swc"/>
-		</uptodate>
-	</target>
-	<target name="check_client">
-		<echo message="Checking status of ${CLIENT}..."/>
-		<uptodate property="client_no_changes" targetfile="${basedir}/${CLIENT}/bin/${CLIENT}.swf">
-			<srcfiles dir="${basedir}/${CLIENT}" includes="**/*.as"/>
-			<srcfiles dir="${basedir}/${CLIENT}" includes="**/*.mxml"/>
-			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
-			<srcfiles dir="${basedir}/${CORE}/bin" includes="${CORE}.swc"/>
-			<srcfiles dir="${basedir}/${DATA}/bin" includes="${DATA}.swc"/>
-			<srcfiles dir="${basedir}/${UI}/bin" includes="${UI}.swc"/>
-		</uptodate>
-	</target>
-	<target name="check_admin">
-		<echo message="Checking status of ${ADMIN}..."/>
-		<uptodate property="admin_no_changes" targetfile="${basedir}/${ADMIN}/bin/${ADMIN}.swf">
-			<srcfiles dir="${basedir}/${ADMIN}" includes="**/*.as"/>
-			<srcfiles dir="${basedir}/${ADMIN}" includes="**/*.mxml"/>
-			<srcfiles dir="${basedir}/${API}/bin" includes="${API}.swc"/>
-			<srcfiles dir="${basedir}/${CORE}/bin" includes="${CORE}.swc"/>
-			<srcfiles dir="${basedir}/${DATA}/bin" includes="${DATA}.swc"/>
-			<srcfiles dir="${basedir}/${UI}/bin" includes="${UI}.swc"/>
-		</uptodate>
-	</target>
-
 
 	<target name="admin_wrapper">
 		<html-wrapper 
@@ -291,12 +250,12 @@
 			swf="AdminConsole"
 			history="false"
 			version-major="10"
-			version-minor="0"
+			version-minor="2"
 			version-revision="0"
 			height="100%"
 			width="100%"
 			title="AdminConsole"
-			template="express-installation"
+			express-install="true"
 			bgcolor="#7B96B6"
 		/>
 	</target>
@@ -308,15 +267,16 @@
 			swf="weave"
 			history="false"
 			version-major="10"
-			version-minor="0"
+			version-minor="2"
 			version-revision="0"
 			height="100%"
 			width="100%"
 			title="weave"
-			template="express-installation"
+			express-install="true"
 			bgcolor="#7B96B6"
 		/>
 	</target>
+
 	<macrodef name="extract_swc">
 		<attribute name="swc"/>
 		<attribute name="rsl"/>
@@ -330,4 +290,24 @@
 			<delete dir="${WEAVE_DESTROOT}/temp"/>
 		</sequential>
 	</macrodef>
+	
+	<macrodef name="buildproject">
+		<attribute name="targetproject"/>
+		<attribute name="targetfileext"/>
+		<sequential>
+			<echo message="Checking @{targetproject}..."/>
+			<uptodate targetfile="${basedir}/@{targetproject}/bin/@{targetproject}.@{targetfileext}" property="@{targetproject}.uptodate">
+				<srcfiles dir="${basedir}/@{targetproject}" includes="**/*"/>
+			</uptodate>
+			<antcall target="conditional_build">
+				<param name="targetproject" value="@{targetproject}"/>
+			</antcall>
+		</sequential>
+	</macrodef>
+	<target name="conditional_build" unless="${targetproject}.uptodate">
+		<sequential>
+			<echo message="Building ${targetproject}..."/>
+			<ant dir="${basedir}/${targetproject}" target="build"/>
+		</sequential>
+	</target>
 </project>

@@ -26,7 +26,7 @@ package weave.data.AttributeColumns
 	import mx.utils.ObjectUtil;
 	
 	import weave.api.WeaveAPI;
-	import weave.api.data.AttributeColumnMetadata;
+	import weave.api.data.ColumnMetadata;
 	import weave.api.data.DataTypes;
 	import weave.api.data.IPrimitiveColumn;
 	import weave.api.data.IQualifiedKey;
@@ -36,12 +36,9 @@ package weave.data.AttributeColumns
 	import weave.compiler.StandardLib;
 	import weave.core.LinkableBoolean;
 	import weave.core.LinkableString;
+	import weave.utils.AsyncSort;
 	import weave.utils.EquationColumnLib;
 	
-	/**
-	 * SecondaryKeyColumn
-	 * 	
-	 */
 	public class SecondaryKeyNumColumn extends AbstractAttributeColumn implements IPrimitiveColumn
 	{
 		public function SecondaryKeyNumColumn(metadata:XML = null)
@@ -58,9 +55,9 @@ package weave.data.AttributeColumns
 		{
 			if (useGlobalMinMaxValues.value)
 			{
-				if (propertyName == AttributeColumnMetadata.MIN)
+				if (propertyName == ColumnMetadata.MIN)
 					return String(_minNumber);
-				if (propertyName == AttributeColumnMetadata.MAX)
+				if (propertyName == ColumnMetadata.MAX)
 					return String(_maxNumber);
 			}
 			
@@ -68,11 +65,11 @@ package weave.data.AttributeColumns
 			
 			switch (propertyName)
 			{
-				case AttributeColumnMetadata.TITLE:
+				case ColumnMetadata.TITLE:
 					if (value != null && secondaryKeyFilter.value && !allKeysHack)
 						return value + ' (' + secondaryKeyFilter.value + ')';
 					break;
-				case AttributeColumnMetadata.KEY_TYPE:
+				case ColumnMetadata.KEY_TYPE:
 					if (secondaryKeyFilter.value == null)
 						return value + TYPE_SUFFIX
 					break;
@@ -87,17 +84,15 @@ package weave.data.AttributeColumns
 		private var _maxNumber:Number = NaN; // returned by getMetadata
 		
 		/**
-		 * _keyToNumericDataMapping
 		 * This object maps keys to data values.
 		 */
 		protected var _keyToNumericDataMapping:Dictionary = new Dictionary();
 		protected var _keyToNumericDataMappingAB:Dictionary = new Dictionary();
 
 		/**
-		 * uniqueStrings
 		 * Derived from the record data, this is a list of all existing values in the dimension, each appearing once, sorted alphabetically.
 		 */
-		private var _uniqueStrings:Vector.<String> = new Vector.<String>();
+		private const _uniqueStrings:Vector.<String> = new Vector.<String>();
 
 		/**
 		 * This is the value used to filter the data.
@@ -112,7 +107,6 @@ package weave.data.AttributeColumns
 		}
 
 		/**
-		 * _uniqueKeys
 		 * This is a list of unique keys this column defines values for.
 		 */
 		protected const _uniqueKeysA:Array = new Array();
@@ -160,7 +154,7 @@ package weave.data.AttributeColumns
 			_keyToNumericDataMapping = new Dictionary();
 			
 			//if it's string data - create list of unique strings
-			var dataType:String = _metadata.attribute(AttributeColumnMetadata.DATA_TYPE);
+			var dataType:String = _metadata.attribute(ColumnMetadata.DATA_TYPE);
 			if (data[0] is String || (dataType && dataType != DataTypes.NUMBER))
 			{
 				if (!dataType)
@@ -170,7 +164,7 @@ package weave.data.AttributeColumns
 					if (_uniqueStrings.indexOf(data[i]) < 0)
 						_uniqueStrings.push(data[i]);
 				}
-				_uniqueStrings.sort(Array.CASEINSENSITIVE);
+				AsyncSort.sortImmediately(_uniqueStrings, AsyncSort.compareCaseInsensitive);
 				
 				// min,max numbers are the min,max indices in the unique strings array
 				_minNumber = 0;
@@ -183,7 +177,7 @@ package weave.data.AttributeColumns
 				_minNumber = NaN;
 				_maxNumber = NaN;
 			}
-			_metadata.attribute(AttributeColumnMetadata.DATA_TYPE).setChildren(dataType);
+			_metadata.attribute(ColumnMetadata.DATA_TYPE).setChildren(dataType);
 			
 			// save a mapping from keys to data
 			for (index = 0; index < keysA.length; index++)
@@ -221,7 +215,7 @@ package weave.data.AttributeColumns
 				}
 			}
 			
-			_uniqueSecondaryKeys.sort();
+			AsyncSort.sortImmediately(_uniqueSecondaryKeys);
 			
 			// save list of unique keys
 			index = 0;
@@ -238,13 +232,11 @@ package weave.data.AttributeColumns
 		}
 
 		/**
-		 * numberFormatter:
 		 * the NumberFormatter to use when generating a string from a number
 		 */
 		private var _numberFormatter:NumberFormatter = new NumberFormatter();
 
 		/**
-		 * maxDerivedSignificantDigits:
 		 * maximum number of significant digits to return when calling deriveStringFromNorm()
 		 */		
 		private var maxDerivedSignificantDigits:uint = 10;
@@ -286,7 +278,7 @@ package weave.data.AttributeColumns
 			{
 				if (_qkeyCache[qkey] === undefined)
 				{
-					var type:String = _metadata.attribute(AttributeColumnMetadata.DATA_TYPE);
+					var type:String = _metadata.attribute(ColumnMetadata.DATA_TYPE);
 					if (type == DataTypes.NUMBER)
 						return null;
 					if (type == '')
@@ -304,7 +296,7 @@ package weave.data.AttributeColumns
 
 		override public function toString():String
 		{
-			return getQualifiedClassName(this).split("::")[1] + '{recordCount: '+keys.length+', keyType: "'+getMetadata('keyType')+'", title: "'+getMetadata('title')+'"}';
+			return debugId(this) + '{recordCount: '+keys.length+', keyType: "'+getMetadata('keyType')+'", title: "'+getMetadata('title')+'"}';
 		}
 
 	}
