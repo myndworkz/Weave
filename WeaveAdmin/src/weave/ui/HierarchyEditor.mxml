@@ -27,14 +27,15 @@
     </mx:VBox>
 <mx:Script>
 <![CDATA[
-    import weave.services.beans.AttributeColumnInfo;
-    import weave.services.AdminInterface;
-    import weave.core.UIUtils;
-    import weave.utils.PopUpUtils;
-
-    import mx.events.PropertyChangeEvent;
-    import mx.events.ListEvent;
-    import mx.binding.utils.ChangeWatcher;
+	import mx.binding.utils.ChangeWatcher;
+	import mx.events.ListEvent;
+	import mx.events.PropertyChangeEvent;
+	
+	import weave.core.UIUtils;
+	import weave.services.AdminInterface;
+	import weave.services.addAsyncResponder;
+	import weave.services.beans.AttributeColumnInfo;
+	import weave.utils.PopUpUtils;
 
     [Bindable] public var selectedItem:EntityTreeNode;
     public function handleCreated():void
@@ -54,7 +55,7 @@
         {
             item.remove_self();
             /* A table deletion will also incur a deletion of all of its data columns, which could reside in any tag. Therefore, we should invalidate the entire metadata cache. */
-            AdminInterface.instance.meta_cache.invalidate();
+            AdminInterface.instance.meta_cache.invalidateRoot();
             tableTree.reload();
             tagTree.reload();
             tagTree.invalidateList();
@@ -74,12 +75,12 @@
         var meta:Object = {};
         meta["public"] = {title: name};
         */
-        function finish_add_tag(obj:Object=null):void
+        function finish_add_tag(..._):void
         {
             tagNameInput.text = "";
             tagTree.reload();
         };
-        AdminInterface.instance.meta_cache.add_tag(name, finish_add_tag);
+        addAsyncResponder(AdminInterface.instance.meta_cache.add_tag_and_fetch(name), finish_add_tag);
         
     }
     public function selectionsChanged(event:ListEvent):void

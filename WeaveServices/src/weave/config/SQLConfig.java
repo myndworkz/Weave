@@ -165,7 +165,7 @@ public class SQLConfig
 	}
 
 
-        public Integer addEntity(Integer type_id, Map<String,Map<String,String>> properties) throws RemoteException
+        public Integer addEntity(Integer type_id, DataEntityMetadata properties) throws RemoteException
         {
             Integer id = manifest.addEntry(type_id);
             if (properties != null)
@@ -189,19 +189,15 @@ public class SQLConfig
             public_attributes.clearId(id);
             private_attributes.clearId(id);
         }
-        public void updateEntity(Integer id, Map<String,Map<String,String>> properties) throws RemoteException
+        public void updateEntity(Integer id, DataEntityMetadata properties) throws RemoteException
         {
-            Map<String,String> pubMeta = properties.get("public");
-            Map<String,String> privMeta = properties.get("private");
-            if (pubMeta != null)
-            for (Entry<String,String> propval : pubMeta.entrySet())
+            for (Entry<String,String> propval : properties.publicMetadata.entrySet())
             {
                 String key = propval.getKey();
                 String value = propval.getValue();
                 public_attributes.setProperty(id, key, value);
             }
-            if (privMeta != null)
-            for (Entry<String,String> propval : privMeta.entrySet())
+            for (Entry<String,String> propval : properties.privateMetadata.entrySet())
             {
                 String key = propval.getKey();
                 String value = propval.getValue();
@@ -212,18 +208,16 @@ public class SQLConfig
         {
             return getEntities(manifest.getByType(type_id));
         }
-        public Collection<DataEntity> findEntities(Map<String,Map<String,String>> properties, Integer type_id) throws RemoteException
+        public Collection<DataEntity> findEntities(DataEntityMetadata properties, Integer type_id) throws RemoteException
         {
-            Map<String,String> publicprops = properties.get("public");
-            Map<String,String> privateprops = properties.get("private");
             Set<Integer> publicmatches = null;
             Set<Integer> privatematches = null;
             Set<Integer> matches = null;
 
-            if (publicprops != null && publicprops.size() > 0)
-                publicmatches = public_attributes.filter(publicprops);
-            if (privateprops != null && privateprops.size() > 0)
-                privatematches = private_attributes.filter(privateprops);
+            if (properties.publicMetadata != null && properties.publicMetadata.size() > 0)
+                publicmatches = public_attributes.filter(properties.publicMetadata);
+            if (properties.privateMetadata != null && properties.privateMetadata.size() > 0)
+                privatematches = private_attributes.filter(properties.privateMetadata);
             /* Ick */
             if ((publicmatches != null) && (privatematches != null))
             {
@@ -269,10 +263,7 @@ public class SQLConfig
             /* Do a recursive copy of an entity. */
             Integer new_id;
             DataEntity old_data = getEntity(id);
-            Map<String,Map<String,String>> props = new HashMap<String,Map<String,String>>();
-            props.put("public", old_data.publicMetadata);
-            props.put("private", old_data.privateMetadata);
-            new_id = addEntity(old_data.type, props);
+            new_id = addEntity(old_data.type, old_data);
 
             Collection<DataEntity> old_children = getChildren(id);
             for (DataEntity child : old_children)
@@ -470,7 +461,8 @@ public class SQLConfig
 
                     for (Entry<String,String> keyValPair : constraints.entrySet())
                     {
-                        if (keyValPair.getKey() == null || keyValPair.getValue() == null) continue;
+                        if (keyValPair.getKey() == null || keyValPair.getValue() == null)
+                        	continue;
                         Map<String,String> colValPair = new HashMap<String,String>();
                         colValPair.put(META_PROPERTY, keyValPair.getKey());
                         colValPair.put(META_VALUE, keyValPair.getValue());

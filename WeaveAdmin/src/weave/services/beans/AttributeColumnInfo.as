@@ -19,7 +19,7 @@
 
 package weave.services.beans
 {
-	public class AttributeColumnInfo
+	public class AttributeColumnInfo extends EntityMetadata
 	{
 		static public const CONNECTION:String = "connection";
 		static public const SQLQUERY:String = "sqlQuery";
@@ -37,8 +37,6 @@ package weave.services.beans
 		public static const ENTITY_CATEGORY:int = 2;
 		public var id:int;
 		public var entity_type:int;
-		public var privateMetadata:Object;
-		public var publicMetadata:Object;
 		public function AttributeColumnInfo(o:Object = null)
 		{
 			if (o == null) return;

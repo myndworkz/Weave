@@ -17,13 +17,15 @@
     </mx:HBox>
 <mx:Script>
 <![CDATA[
-    import weave.services.AdminInterface;
-    import weave.services.beans.AttributeColumnInfo;
-    import weave.core.UIUtils;
-    import mx.binding.utils.ChangeWatcher;
-    import weave.services.WeaveAdminService;
-    import weave.ui.EntityTreeNode;
-    import mx.controls.Alert;
+	import mx.binding.utils.ChangeWatcher;
+	import mx.controls.Alert;
+	
+	import weave.core.UIUtils;
+	import weave.services.AdminInterface;
+	import weave.services.WeaveAdminService;
+	import weave.services.addAsyncResponder;
+	import weave.services.beans.AttributeColumnInfo;
+	import weave.ui.EntityTreeNode;
     [Bindable] public var targetItem:EntityTreeNode = null;
     [Bindable] public var isChanged:Boolean = false;
 
@@ -75,7 +77,7 @@
             else
                 setEditors();
         }
-        targetItem.commit(pubDiff, privDiff, validateCommit);
+        addAsyncResponder(targetItem.commit(pubDiff, privDiff), validateCommit);
     }
     private static function printobj(o:Object):void
     {
