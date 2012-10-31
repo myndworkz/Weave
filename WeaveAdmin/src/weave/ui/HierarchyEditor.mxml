@@ -15,7 +15,7 @@
         </mx:HBox>
     </mx:VBox>
     <mx:VBox height="100%" width="60%">
-        <mx:Label text="Tags"/>
+        <mx:Label text="Custom Hierarchy"/>
         <ui:EntityTree id="tagTree" entityType="{AttributeColumnInfo.ENTITY_CATEGORY}" 
             width="100%" height="100%" 
             dragEnabled="true" dragMoveEnabled="true" dropEnabled="true"/>

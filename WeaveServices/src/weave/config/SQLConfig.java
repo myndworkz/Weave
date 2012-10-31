@@ -428,10 +428,10 @@ public class SQLConfig
                     Map<String,String> params = new HashMap<String,String>();
                     Map<Integer,String> result = new HashMap<Integer,String>();
                     params.put(META_PROPERTY, property);
-                    List<Map<String,String>> rows = SQLUtils.getRecordsFromQuery(conn, Arrays.asList(META_ID, META_VALUE), schemaName,tableName, params);
-                    for (Map<String,String> row : rows)
+                    List<Map<String,Object>> rows = SQLUtils.getRecordsFromQuery(conn, Arrays.asList(META_ID, META_VALUE), schemaName, tableName, params, true);
+                    for (Map<String,Object> row : rows)
                     {
-                        result.put(Integer.parseInt(row.get(META_ID)), row.get(META_VALUE));
+                        result.put(Integer.parseInt((String)row.get(META_ID)), (String)row.get(META_VALUE));
                     }
                     return result;
                 }
@@ -525,14 +525,13 @@ public class SQLConfig
                     }
                     else 
                     {
-                        List<String> columns = new LinkedList<String>();
                         Map<String,Object> query = new HashMap<String,Object>();
                         Set<Integer> children = new HashSet<Integer>();
                         query.put(TAG_PARENT, parent_id);
                         /* Ew. Need to add properly generic select. Or use JOOQ. */
-                        for (Map<String,String> row : SQLUtils.getRecordsFromQuery(conn, columns, schemaName, tableName, query))
+                        for (Map<String,Object> row : SQLUtils.getRecordsFromQuery(conn, null, schemaName, tableName, query, false))
                         {
-                            children.add(Integer.parseInt(row.get(TAG_CHILD)));
+                            children.add(((Number)row.get(TAG_CHILD)).intValue());
                         }
                         return children;
                     }
@@ -645,14 +644,14 @@ public class SQLConfig
                 {
                     Connection conn = this.conn.getConnection();
                     Map<String,Integer> whereParams = new HashMap<String,Integer>();
-                    List<Map<String,String>> sqlres;
+                    List<Map<String,Object>> sqlres;
                     for (Integer id : ids)
                     {
                         whereParams.clear();
                         whereParams.put(MAN_ID, id);
-                        sqlres = SQLUtils.getRecordsFromQuery(
-                            conn, Arrays.asList(MAN_ID, MAN_TYPE), schemaName, tableName, whereParams);
-                        result.put(id, new Integer(sqlres.get(0).get(MAN_TYPE)));
+                        sqlres = SQLUtils.getRecordsFromQuery(conn, Arrays.asList(MAN_ID, MAN_TYPE), schemaName, tableName, whereParams, true);
+                        // sqlres has one row
+                        result.put(id, new Integer((String)sqlres.get(0).get(MAN_TYPE)));
                     }
                     return result;
                 }
@@ -671,14 +670,13 @@ public class SQLConfig
                 {
                     Collection<Integer> ids = new LinkedList<Integer>();
                     Map<String,Integer> whereParams = new HashMap<String,Integer>();
-                    List<Map<String,String>> sqlres;
+                    List<Map<String,Object>> sqlres;
                     Connection conn = this.conn.getConnection();
                     whereParams.put(MAN_TYPE, type_id);
-                    sqlres = SQLUtils.getRecordsFromQuery(
-                        conn, Arrays.asList(MAN_ID, MAN_TYPE), schemaName, tableName, whereParams);
-                    for (Map<String,String> row : sqlres)
+                    sqlres = SQLUtils.getRecordsFromQuery(conn, Arrays.asList(MAN_ID, MAN_TYPE), schemaName, tableName, whereParams, true);
+                    for (Map<String,Object> row : sqlres)
                     {
-                        ids.add(Integer.parseInt(row.get(MAN_ID)));
+                        ids.add(Integer.parseInt((String)row.get(MAN_ID)));
                     }
                     return ids;
                 }
