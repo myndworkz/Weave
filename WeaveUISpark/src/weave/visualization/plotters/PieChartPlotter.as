@@ -54,7 +54,6 @@ package weave.visualization.plotters
 			var fill:SolidFillStyle = fillStyle.internalObject as SolidFillStyle;
 			fill.color.internalDynamicColumn.globalName = Weave.DEFAULT_COLOR_COLUMN;
 			
-			_beginRadians = newLinkableChild(this, EquationColumn);
 			_beginRadians.equation.value = "0.5 * PI + getRunningTotal(spanRadians) - getNumber(spanRadians)";
 			_spanRadians = _beginRadians.requestVariable("spanRadians", EquationColumn, true);
 			_spanRadians.equation.value = "getNumber(sortedData) / getSum(sortedData) * 2 * PI";
@@ -62,13 +61,12 @@ package weave.visualization.plotters
 			_filteredData = sortedData.internalDynamicColumn.requestLocalObject(FilteredColumn, true);
 			linkSessionState(keySet.keyFilter, _filteredData.filter);
 			
-			registerSpatialProperty(data);
 			setColumnKeySources([_filteredData]);
 			
 			registerLinkableChild(this, LinkableTextFormat.defaultTextFormat); // redraw when text format changes
 		}
 
-		private var _beginRadians:EquationColumn;
+		private const _beginRadians:EquationColumn = newSpatialProperty(EquationColumn);
 		private var _spanRadians:EquationColumn;
 		private var _filteredData:FilteredColumn;
 		
@@ -95,7 +93,7 @@ package weave.visualization.plotters
 			lineStyle.beginLineStyle(recordKey, graphics);				
 			fillStyle.beginFillStyle(recordKey, graphics);
 			// move to center point
-			WedgePlotter.drawProjectedWedge(graphics, dataBounds, screenBounds, beginRadians, spanRadians);
+			WedgePlotter.drawProjectedWedge(graphics, dataBounds, screenBounds, beginRadians, spanRadians, 0, 0, 1, 0.5);
 			// end fill
 			graphics.endFill();
 		}
@@ -167,6 +165,7 @@ package weave.visualization.plotters
 			var spanRadians:Number = _spanRadians.getValueFromKey(recordKey, Number);
 			var bounds:IBounds2D = getReusableBounds();
 			WedgePlotter.getWedgeBounds(bounds, beginRadians, spanRadians);
+			trace(recordKey.localName,bounds);
 			return [bounds];
 		}
 		

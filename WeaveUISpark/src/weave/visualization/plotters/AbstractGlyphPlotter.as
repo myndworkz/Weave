@@ -189,7 +189,6 @@ package weave.visualization.plotters
 		{
 			getCoordsFromRecordKey(recordKey, tempPoint);
 			
-			var bounds:IBounds2D = getReusableBounds();
 			bounds.setCenteredRectangle(tempPoint.x, tempPoint.y, 0, 0);
 			if (isNaN(tempPoint.x))
 				bounds.setXRange(-Infinity, Infinity);
@@ -202,20 +201,22 @@ package weave.visualization.plotters
 		 * This function returns a Bounds2D object set to the data bounds associated with the background.
 		 * @param outputDataBounds A Bounds2D object to store the result in.
 		 */
-		override public function getBackgroundDataBounds():IBounds2D
+		override public function getBackgroundDataBounds(output:IBounds2D):void
 		{
 			// use filtered data so data bounds will not include points that have been filtered out.
-			var bounds:IBounds2D = getReusableBounds();
-			if (!zoomToSubset.value)
+			if (zoomToSubset.value)
 			{
-				bounds.setBounds(
+				output.reset();
+			}
+			else
+			{
+				output.setBounds(
 					statsX.getMin(),
 					statsY.getMin(),
 					statsX.getMax(),
 					statsY.getMax()
 				);
 			}
-			return bounds;
 		}
 	}
 }
