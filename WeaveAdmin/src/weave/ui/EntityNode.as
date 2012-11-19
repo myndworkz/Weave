@@ -1,24 +1,15 @@
 
 package weave.ui
 {
-    import flash.events.Event;
-    import flash.events.EventDispatcher;
-    
     import mx.collections.ArrayCollection;
     import mx.collections.ICollectionView;
-    import mx.collections.ListCollectionView;
-    import mx.controls.Tree;
-    import mx.rpc.AsyncToken;
-    import mx.rpc.events.ResultEvent;
-    import mx.utils.ObjectUtil;
+    import mx.utils.StringUtil;
     
     import weave.api.data.ColumnMetadata;
     import weave.services.AdminInterface;
     import weave.services.EntityCache;
-    import weave.services.WeaveAdminService;
-    import weave.services.addAsyncResponder;
     import weave.services.beans.Entity;
-    import weave.services.beans.EntityMetadata;
+    import weave.services.beans.EntityTableInfo;
 
 	[RemoteClass]
     public class EntityNode
@@ -55,6 +46,13 @@ package weave.ui
 			if (!AdminInterface.instance.userHasAuthenticated)
 				return 'Not logged in';
 			
+			var tableInfo:EntityTableInfo = AdminInterface.instance.entityCache.getDataTableInfo(id);
+			if (tableInfo != null)
+			{
+				// this is a table node, so avoid calling getEntity()
+				return StringUtil.substitute("{0} ({1})", tableInfo.title, tableInfo.numChildren);
+			}
+			
 			var info:Entity = getEntity();
 			
 			var title:String = info.publicMetadata[ColumnMetadata.TITLE];
@@ -84,8 +82,19 @@ package weave.ui
 			if (!AdminInterface.instance.userHasAuthenticated)
 				return null;
 			
-			var entity:Entity = AdminInterface.instance.entityCache.getEntity(id);
-			var childIds:Array = entity.childIds;
+			var childIds:Array;
+			var type:int = _rootFilterType;
+			if (type == Entity.TYPE_TABLE)
+			{
+				childIds = AdminInterface.instance.entityCache.getDataTableIds();
+			}
+			else
+			{
+				var entity:Entity = AdminInterface.instance.entityCache.getEntity(id);
+				type = entity.type;
+				childIds = entity.childIds;
+			}
+			
 			if (!childIds)
 				return null;
 			
@@ -118,7 +127,7 @@ package weave.ui
 			}
 			_childNodes.length = outputIndex;
 			
-			if (entity.type == Entity.TYPE_COLUMN && _childNodes.length == 0)
+			if (type == Entity.TYPE_COLUMN && _childNodes.length == 0)
 				return null; // leaf node
 			
 			return _childCollectionView;

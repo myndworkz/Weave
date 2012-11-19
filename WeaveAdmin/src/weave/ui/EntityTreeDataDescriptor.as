@@ -3,6 +3,8 @@ package weave.ui
     import mx.collections.ICollectionView;
     import mx.controls.treeClasses.ITreeDataDescriptor;
     
+    import weave.services.beans.Entity;
+    
     public class EntityTreeDataDescriptor implements ITreeDataDescriptor
     {
         public function EntityTreeDataDescriptor()
@@ -30,6 +32,7 @@ package weave.ui
         }
         public function hasChildren(node:Object, model:Object = null):Boolean
         {
+			return true;
 			var children:ICollectionView = (node as EntityNode).children;
 			return children && children.length;
         }
@@ -39,7 +42,8 @@ package weave.ui
         }
         public function isBranch(node:Object, model:Object = null):Boolean
         {
-			return (node as EntityNode).children != null;
+			var entity:Entity = (node as EntityNode).getEntity();
+			return entity.type != Entity.TYPE_COLUMN && entity.type != Entity.TYPE_ANY;
         }
     }
 }

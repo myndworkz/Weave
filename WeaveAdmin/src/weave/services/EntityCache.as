@@ -9,6 +9,7 @@ package weave.services
     import weave.api.getCallbackCollection;
     import weave.services.beans.Entity;
     import weave.services.beans.EntityMetadata;
+    import weave.services.beans.EntityTableInfo;
     import weave.utils.Dictionary2D;
 
     public class EntityCache implements ILinkableObject
@@ -19,6 +20,8 @@ package weave.services
         private var cache_entity:Object = {}; // id -> Array <Entity>
 		private var d2d_child_parent:Dictionary2D = new Dictionary2D(); // <child_id,parent_id> -> Boolean
 		private var delete_later:Object = {}; // id -> Boolean
+		private var _dataTableIds:Array = []; // array of EntityTableInfo
+		private var _dataTableLookup:Object = {}; // id -> EntityTableInfo
 		
         public function EntityCache()
         {
@@ -88,7 +91,11 @@ package weave.services
 			// request invalidated entities
 			var ids:Array = [];
 			for (id in cache_dirty)
+			{
+				if (id == ROOT_ID)
+					addAsyncResponder(AdminInterface.service.getDataTableList(), handleDataTableList);
 				ids.push(int(id));
+			}
 			if (ids.length > 0)
 			{
 				cache_dirty = {};
@@ -112,6 +119,32 @@ package weave.services
 			
 			callbacks.triggerCallbacks();
         }
+		
+		private function handleDataTableList(event:ResultEvent, token:Object = null):void
+		{
+			var items:Array = event.result as Array;
+			for (var i:int = 0; i < items.length; i++)
+			{
+				var item:EntityTableInfo = new EntityTableInfo(items[i]);
+				_dataTableLookup[item.id] = item;
+				items[i] = item.id;
+			}
+			_dataTableIds = items;
+			
+			callbacks.triggerCallbacks();
+		}
+		
+		public function getDataTableIds():Array
+		{
+			getEntity(ROOT_ID);
+			return _dataTableIds;
+		}
+		
+		public function getDataTableInfo(id:int):EntityTableInfo
+		{
+			getEntity(ROOT_ID);
+			return _dataTableLookup[id];
+		}
         
 		public function clearCache():void
         {
@@ -120,6 +153,8 @@ package weave.services
 			// we don't want to delete the cache because we can still use the cached values for display in the meantime.
 			for (var id:* in cache_entity)
 				invalidate(id);
+			
+			callbacks.triggerCallbacks();
 			
 			callbacks.resumeCallbacks();
         }

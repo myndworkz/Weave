@@ -352,6 +352,10 @@ package weave.services
 		{
 			return invokeAdminWithLogin(getEntitiesById, arguments);
 		}
+		public function getDataTableList():AsyncToken
+		{
+			return invokeAdminWithLogin(getDataTableList, arguments);
+		}
 		
 		///////////////////////
 		// SQL info retrieval
